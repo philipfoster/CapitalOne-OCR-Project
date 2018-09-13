@@ -1,5 +1,7 @@
 package com.capitalone.creditocr;
 
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -10,7 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HelloWorldController {
 
-    String processRequest() {
+    @RequestMapping(
+            value = "/hello",
+            method = RequestMethod.GET
+    )
+    public String processRequest() {
         return "Hello World";
     }
 }
