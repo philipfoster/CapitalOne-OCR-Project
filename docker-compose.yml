@@ -24,9 +24,7 @@ services:
 
   # API server (our code)
   ocr:
-    image: cap-one-ocr/credit-ocr
-    build:
-      context: .
+    image: credit-ocr
     ports:
       - "8080:8080"
     depends_on:
