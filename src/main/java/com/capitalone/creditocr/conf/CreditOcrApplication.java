@@ -1,4 +1,4 @@
-package com.capitalone.creditocr;
+package com.capitalone.creditocr.conf;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,7 +1,7 @@
 package com.capitalone.creditocr;
 
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -12,11 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HelloWorldController {
 
-    @RequestMapping(
-            value = "/hello",
-            method = RequestMethod.GET
-    )
+    @RequestMapping("/hello")
+    @PostAuthorize("permitAll")
     public String processRequest() {
         return "Hello World";
     }
+
 }
