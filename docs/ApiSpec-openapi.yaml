@@ -3,17 +3,12 @@ openapi: 3.0.1
 info:
   title: OcrProject
   version: 1.0.0 
-  contact:
-    url: https://pfoster.me
-    name: Philip Foster
-    email: philip@pfoster.me
 paths:
   /documents:
     post:
       operationId: uploadDocument
       summary: Upload a new document to the system
-      description: 'This endpoint will ingest new letters into the system and process them. Individual Images can be uploaded in 
-      jpeg, or png format. Multiple images can be uploaded at once by compressing them in a zip file. '
+      description: 'This endpoint will ingest new letters into the system and process them. Individual Images can be uploaded in jpeg, png, or pdf format. Multiple images of any combination of these types can be uploaded at once by compressing them in a zip file. '
       requestBody:
         content:
           image/jpeg:
@@ -24,10 +19,15 @@ paths:
             schema:
               type: string
               format: binary
+          application/pdf:
+              schema:
+                type: string
+                format: binary
           application/zip:
             schema:
               type: string
               format: binary
+
       responses:
         202:
           description: OK
@@ -146,8 +146,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-            
-
+  /documents/search:
+    get:
+      operationId: searchDocuments
+      summary: Search documents
+      description: Users can search via arbitrary keywords to return a list of relevant documents
+      parameters:
+      - name: query
+        in: query
+        description: The keyword(s) to search for
+        required: true
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: The maximum number of items to return
+        required: false
+        schema:
+          default: 10
+          maximum: 50
+          type: integer
+      - name: page
+        in: query
+        description: The page number to load
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentResponse'
   /documents/{id}/text:
     get:
       operationId: getDocumentText
@@ -197,6 +232,10 @@ paths:
               schema:
                 type: string
                 format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
         404:
           description: Not found
           content:
@@ -243,7 +282,6 @@ components:
         status:
           description: A copy of the HTTP status code returned by the request.
           type: integer
-
       example: |-
         {
           "message": "Not found",
@@ -333,7 +371,3 @@ components:
           type: array
           items:
             type: string
-          
-
-
-        
