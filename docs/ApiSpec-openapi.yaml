@@ -62,7 +62,8 @@ paths:
   /documents/{id}:
     get:
       operationId: getDocumentMetadata
-      summary: Get extracted metadata about a document
+      summary: Get document metadata
+      description: Get extracted metadata about a document
       parameters:
       - name: id
         in: path
@@ -85,7 +86,8 @@ paths:
                 $ref: '#/components/schemas/Error'
     put:
       operationId: updateDocumentMetadata
-      summary: Update metadata about a document. Any field specified in the body will overwrite the existing data. 
+      summary: Update document metadata
+      description: Update metadata about a document. Any field specified in the body will overwrite the existing data. 
       parameters:
       - name: id
         in: path
@@ -149,7 +151,8 @@ paths:
   /documents/{id}/text:
     get:
       operationId: getDocumentText
-      summary: Get the text extracted from the document.
+      summary: Get document text
+      description: Get the text extracted from the document.
       parameters:
       - name: id
         in: path
@@ -173,7 +176,8 @@ paths:
   /documents/{id}/image:
     get:
       operationId: getDocumentImage
-      summary: Get the original scanned image for the document
+      summary: Get document image
+      description: Get the original scanned image for the document
       parameters:
       - name: id
         in: path
@@ -239,6 +243,7 @@ components:
         status:
           description: A copy of the HTTP status code returned by the request.
           type: integer
+
       example: |-
         {
           "message": "Not found",
