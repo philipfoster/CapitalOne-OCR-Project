@@ -3,5 +3,5 @@ REM This script will compile the project, build the docker image, and launch it 
 
 call mvnw package
 REM docker-compose build
-docker build -t credit-ocr .
+docker build -t credit-ocr --build-arg JAR_FILE=./target/credit-ocr-0.0.1-SNAPSHOT.jar .
 docker-compose up
