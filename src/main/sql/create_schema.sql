@@ -16,60 +16,18 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: postgres; Type: DATABASE; Schema: -; Owner: ocr
+-- Name: image_type; Type: TYPE; Schema: public; Owner: ocr
 --
 
-CREATE DATABASE postgres WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'en_US.utf8' LC_CTYPE = 'en_US.utf8';
+CREATE TYPE public.image_type AS ENUM (
+    'JPEG',
+    'PDF',
+    'PNG',
+    'TIFF'
+);
 
 
-ALTER DATABASE postgres OWNER TO ocr;
-
-\connect postgres
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- Name: DATABASE postgres; Type: COMMENT; Schema: -; Owner: ocr
---
-
-COMMENT ON DATABASE postgres IS 'default administrative connection database';
-
-
---
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
-
---
--- Name: pg_trgm; Type: EXTENSION; Schema: -; Owner: 
---
-
-CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
-
-
---
--- Name: EXTENSION pg_trgm; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching based on trigrams';
-
+ALTER TYPE public.image_type OWNER TO ocr;
 
 --
 -- Name: compare_simhash(bit, bit); Type: FUNCTION; Schema: public; Owner: ocr
@@ -304,9 +262,9 @@ ALTER SEQUENCE public.document_image_relation_image_id_seq OWNED BY public.docum
 CREATE TABLE public.document_images (
     id integer NOT NULL,
     file_data bytea NOT NULL,
-    file_name text NOT NULL,
     page_number integer,
-    is_envelope boolean DEFAULT false NOT NULL
+    is_envelope boolean DEFAULT false NOT NULL,
+    image_format public.image_type NOT NULL
 );
 
 

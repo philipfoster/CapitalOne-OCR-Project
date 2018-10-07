@@ -13,15 +13,13 @@ public final class DocumentImageDto {
 
     private int id;
     private byte[] fileData;
-    private String fileName;
     private int pageNumber;
     private boolean isEnvelope;
     private ImageType imageType;
 
-    DocumentImageDto(byte[] fileData, String fileName, int pageNumber,
+    DocumentImageDto(byte[] fileData, int pageNumber,
                      boolean isEnvelope, ImageType imageType) {
         this.fileData = fileData;
-        this.fileName = fileName;
         this.pageNumber = pageNumber;
         this.isEnvelope = isEnvelope;
         this.imageType = imageType;
@@ -37,10 +35,6 @@ public final class DocumentImageDto {
 
     public byte[] getFileData() {
         return fileData;
-    }
-
-    public String getFileName() {
-        return fileName;
     }
 
     public int getPageNumber() {
@@ -60,7 +54,6 @@ public final class DocumentImageDto {
         return "DocumentImageDto{" +
                 "id=" + id +
                 ", fileData=" + Arrays.toString(fileData) +
-                ", fileName='" + fileName + '\'' +
                 ", pageNumber=" + pageNumber +
                 ", isEnvelope=" + isEnvelope +
                 ", imageType=" + imageType +
@@ -76,13 +69,12 @@ public final class DocumentImageDto {
                 getPageNumber() == that.getPageNumber() &&
                 isEnvelope() == that.isEnvelope() &&
                 Arrays.equals(getFileData(), that.getFileData()) &&
-                Objects.equals(getFileName(), that.getFileName()) &&
                 getImageType() == that.getImageType();
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(getId(), getFileName(), getPageNumber(), isEnvelope(), getImageType());
+        int result = Objects.hash(getId(), getPageNumber(), isEnvelope(), getImageType());
         result = 31 * result + Arrays.hashCode(getFileData());
         return result;
     }
