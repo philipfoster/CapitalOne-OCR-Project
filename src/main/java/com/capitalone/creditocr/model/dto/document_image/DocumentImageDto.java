@@ -25,6 +25,10 @@ public final class DocumentImageDto {
         this.imageType = imageType;
     }
 
+    public static DocumentImageDtoBuilder builder() {
+        return new DocumentImageDtoBuilder();
+    }
+
     public void setId(int id) {
         this.id = id;
     }
