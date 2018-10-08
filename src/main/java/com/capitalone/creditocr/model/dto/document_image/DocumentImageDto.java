@@ -9,7 +9,11 @@ import java.util.Objects;
 /**
  * This class represents a row in the document_images table.
  */
+@SuppressWarnings("WeakerAccess")
 public final class DocumentImageDto {
+
+    public static final int PAGE_NUM_ENVELOPE = -1;
+
 
     private int id;
     private byte[] fileData;

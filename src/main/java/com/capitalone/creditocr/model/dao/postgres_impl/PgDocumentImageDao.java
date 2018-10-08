@@ -9,9 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.util.Map;
+import java.util.Objects;
+
+import static com.capitalone.creditocr.model.dto.document_image.DocumentImageDto.PAGE_NUM_ENVELOPE;
 
 // Note to team:
 // One of the core pieces of Spring is it's dependency injection (DI; https://en.wikipedia.org/wiki/Dependency_injection)
@@ -48,19 +54,42 @@ public class PgDocumentImageDao implements DocumentImageDao {
     }
 
 
+//    @Override
+//    public void addNewImage(byte[] data, ImageType imageType, int pageNum) {
+//        //language=sql
+//        String sql = "INSERT INTO document_images (file_data, page_number, image_format, is_envelope) " +
+//                     "      VALUES (:fileData, :pageNum, :format::image_format, :isEnvelope);";
+//
+//        MapSqlParameterSource source = new MapSqlParameterSource()
+//                .addValue("fileData", data)
+//                .addValue("pageNum", pageNum == PAGE_NUM_ENVELOPE ? null : pageNum)
+//                .addValue("format", imageType.toString())
+//                .addValue("isEnvelope", pageNum == PAGE_NUM_ENVELOPE);
+//
+//        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+//        template.update(sql, source);
+//    }
+
     @Override
-    public void addNewImage(byte[] data, ImageType imageType, int pageNum) {
-        //language=sql
+    public void addNewImage(DocumentImageDto image) {
+
         String sql = "INSERT INTO document_images (file_data, page_number, image_format, is_envelope) " +
-                     "      VALUES (:fileData, :pageNum, :format::image_format, :isEnvelope);";
+                "      VALUES (:fileData, :pageNum, :format::image_format, :isEnvelope);";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
-                .addValue("fileData", data)
-                .addValue("pageNum", pageNum == PAGE_NUM_ENVELOPE ? null : pageNum)
-                .addValue("format", imageType.toString())
-                .addValue("isEnvelope", pageNum == PAGE_NUM_ENVELOPE);
+                .addValue("fileData", image.getFileData())
+                .addValue("pageNum", image.getPageNumber() == PAGE_NUM_ENVELOPE ? null : image.getPageNumber())
+                .addValue("format", image.getImageType().toString())
+                .addValue("isEnvelope", image.getPageNumber() == PAGE_NUM_ENVELOPE);
 
         NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
-        template.update(sql, source);
+        KeyHolder holder = new GeneratedKeyHolder();
+
+        template.update(sql, source, holder, new String[] {"id"});
+        Map<String, Object> keyMap = holder.getKeys();
+        Objects.requireNonNull(keyMap); // Throw a NPE if the value is null, but make the warning go away.
+
+        image.setId((Integer) keyMap.get("id"));
+
     }
 }
