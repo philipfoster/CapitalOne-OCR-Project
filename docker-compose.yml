@@ -19,7 +19,6 @@ services:
       # These are for development only, so it's ok that the password is insecure
       - POSTGRES_PASSWORD=ocr
       - POSTGRES_USER=ocr
-      - POSTRES_DB=ocr-project
       - DB_HOST=postgresql
 
   # API server (our code)
@@ -39,7 +38,7 @@ services:
     environment:
       - spring.datasource.username=ocr
       - spring.datasource.password=ocr
-      - spring.datasource.url=jdbc:postgresql://postgres:5432/ocr-project
+      - spring.datasource.url=jdbc:postgresql://postgres:5432/postgres
 
 
 
