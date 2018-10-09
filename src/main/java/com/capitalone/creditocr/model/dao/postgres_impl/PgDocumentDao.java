@@ -1,7 +1,7 @@
 package com.capitalone.creditocr.model.dao.postgres_impl;
 
 import com.capitalone.creditocr.model.dao.DocumentDao;
-import com.capitalone.creditocr.model.dto.document.DocumentDto;
+import com.capitalone.creditocr.model.dto.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -29,7 +29,7 @@ public class PgDocumentDao implements DocumentDao {
 
 
     @Override
-    public void createDocument(DocumentDto document) {
+    public void createDocument(Document document) {
         //language=sql
         String sql = "INSERT INTO document (account_number, ssn, letter_date, postmark_date, date_of_birth)" +
                          "VALUES (:acctNo, :ssn, :ldate, :pdate, :dob);";

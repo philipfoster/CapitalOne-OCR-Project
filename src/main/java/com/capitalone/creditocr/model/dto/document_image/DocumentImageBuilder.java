@@ -2,40 +2,40 @@ package com.capitalone.creditocr.model.dto.document_image;
 
 import com.capitalone.creditocr.model.dto.ImageType;
 
-public class DocumentImageDtoBuilder {
+public class DocumentImageBuilder {
     private byte[] fileData;
     private int pageNumber = -1;
     private boolean isEnvelope = false;
     private ImageType imageType;
     private int documentId;
 
-    public DocumentImageDtoBuilder setFileData(byte[] fileData) {
+    public DocumentImageBuilder setFileData(byte[] fileData) {
         this.fileData = fileData;
         return this;
     }
 
 
-    public DocumentImageDtoBuilder setPageNumber(int pageNumber) {
+    public DocumentImageBuilder setPageNumber(int pageNumber) {
         this.pageNumber = pageNumber;
         return this;
     }
 
-    public DocumentImageDtoBuilder setIsEnvelope(boolean isEnvelope) {
+    public DocumentImageBuilder setIsEnvelope(boolean isEnvelope) {
         this.isEnvelope = isEnvelope;
         return this;
     }
 
-    public DocumentImageDtoBuilder setImageType(ImageType imageType) {
+    public DocumentImageBuilder setImageType(ImageType imageType) {
         this.imageType = imageType;
         return this;
     }
 
-    public DocumentImageDtoBuilder setDocumentId(int documentId) {
+    public DocumentImageBuilder setDocumentId(int documentId) {
         this.documentId = documentId;
         return this;
     }
 
-    public DocumentImageDto build() {
-        return new DocumentImageDto(fileData, pageNumber, isEnvelope, imageType, documentId);
+    public DocumentImage build() {
+        return new DocumentImage(fileData, pageNumber, isEnvelope, imageType, documentId);
     }
 }

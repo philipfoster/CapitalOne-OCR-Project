@@ -7,7 +7,7 @@ import java.util.Objects;
 /**
  * DTO for the addresses table.
  */
-public class PostalAddressDto {
+public class PostalAddress {
 
     @Nullable
     private String firstLine;
@@ -29,8 +29,8 @@ public class PostalAddressDto {
 
     private int id;
 
-    public PostalAddressDto(@Nullable String firstLine, @Nullable String secondLine, @Nullable String city,
-                            @Nullable String state, @Nullable String postalCode, @Nullable String country) {
+    public PostalAddress(@Nullable String firstLine, @Nullable String secondLine, @Nullable String city,
+                         @Nullable String state, @Nullable String postalCode, @Nullable String country) {
         this.firstLine = firstLine;
         this.secondLine = secondLine;
         this.city = city;
@@ -39,8 +39,8 @@ public class PostalAddressDto {
         this.country = country;
     }
 
-    public static PostalAddressDtoBuilder builder() {
-        return new PostalAddressDtoBuilder();
+    public static PostalAddressBuilder builder() {
+        return new PostalAddressBuilder();
     }
 
     public void setId(int id) {
@@ -85,7 +85,7 @@ public class PostalAddressDto {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PostalAddressDto that = (PostalAddressDto) o;
+        PostalAddress that = (PostalAddress) o;
         return getId() == that.getId() &&
                 Objects.equals(getFirstLine(), that.getFirstLine()) &&
                 Objects.equals(getSecondLine(), that.getSecondLine()) &&
@@ -102,7 +102,7 @@ public class PostalAddressDto {
 
     @Override
     public String toString() {
-        return "PostalAddressDto{" +
+        return "PostalAddress{" +
                 "firstLine='" + firstLine + '\'' +
                 ", secondLine='" + secondLine + '\'' +
                 ", city='" + city + '\'' +

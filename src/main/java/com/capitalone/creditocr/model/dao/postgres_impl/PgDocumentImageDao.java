@@ -1,7 +1,7 @@
 package com.capitalone.creditocr.model.dao.postgres_impl;
 
 import com.capitalone.creditocr.model.dao.DocumentImageDao;
-import com.capitalone.creditocr.model.dto.document_image.DocumentImageDto;
+import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,7 @@ import javax.sql.DataSource;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.capitalone.creditocr.model.dto.document_image.DocumentImageDto.PAGE_NUM_ENVELOPE;
+import static com.capitalone.creditocr.model.dto.document_image.DocumentImage.PAGE_NUM_ENVELOPE;
 
 // Note to team:
 // One of the core pieces of Spring is it's dependency injection (DI; https://en.wikipedia.org/wiki/Dependency_injection)
@@ -45,7 +45,7 @@ public class PgDocumentImageDao implements DocumentImageDao {
     }
 
     @Override
-    public void addNewImage(DocumentImageDto image) {
+    public void addNewImage(DocumentImage image) {
 
         String sql = "INSERT INTO document_images (file_data, page_number, image_format, is_envelope, document_id) " +
                 "      VALUES (:fileData, :pageNum, :format::image_type, :isEnvelope, :docId);";

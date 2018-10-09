@@ -6,8 +6,8 @@ import com.capitalone.creditocr.controller.exception.UnsupportedFileTypeExceptio
 import com.capitalone.creditocr.model.dao.DocumentDao;
 import com.capitalone.creditocr.model.dao.DocumentImageDao;
 import com.capitalone.creditocr.model.dto.ImageType;
-import com.capitalone.creditocr.model.dto.document.DocumentDto;
-import com.capitalone.creditocr.model.dto.document_image.DocumentImageDto;
+import com.capitalone.creditocr.model.dto.document.Document;
+import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +66,7 @@ public class UploadDocumentController {
 
         // Add a blank row into the db as a placeholder. This also lets us get an auto-generated primary key for
         // referencing by other tables.
-        DocumentDto document = DocumentDto.builder()
+        Document document = Document.builder()
                 .build();
         documentDao.createDocument(document);
 
@@ -82,8 +82,8 @@ public class UploadDocumentController {
         storeImage(fileContent, ImageType.fromContentType(contentType), 0, document);
     }
 
-    private void storeImage(byte[] fileContent, ImageType contentType, int pageNum, DocumentDto document) {
-        DocumentImageDto documentImage = DocumentImageDto.builder()
+    private void storeImage(byte[] fileContent, ImageType contentType, int pageNum, Document document) {
+        DocumentImage documentImage = DocumentImage.builder()
                 .setIsEnvelope(pageNum > 0)
                 .setPageNumber(pageNum)
                 .setImageType(contentType)

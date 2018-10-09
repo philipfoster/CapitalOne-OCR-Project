@@ -2,7 +2,7 @@ package com.capitalone.creditocr.model.dto.document;
 
 import java.time.Instant;
 
-public class DocumentDtoBuilder {
+public class DocumentBuilder {
     private long accountNumber;
     private String ssn;
     private Instant letterDate;
@@ -12,47 +12,47 @@ public class DocumentDtoBuilder {
     private int addressId;
     private int textId;
 
-    public DocumentDtoBuilder setAccountNumber(long accountNumber) {
+    public DocumentBuilder setAccountNumber(long accountNumber) {
         this.accountNumber = accountNumber;
         return this;
     }
 
-    public DocumentDtoBuilder setSsn(String ssn) {
+    public DocumentBuilder setSsn(String ssn) {
         this.ssn = ssn;
         return this;
     }
 
-    public DocumentDtoBuilder setLetterDate(Instant letterDate) {
+    public DocumentBuilder setLetterDate(Instant letterDate) {
         this.letterDate = letterDate;
         return this;
     }
 
-    public DocumentDtoBuilder setDateOfBirth(Instant dateOfBirth) {
+    public DocumentBuilder setDateOfBirth(Instant dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
         return this;
     }
 
-    public DocumentDtoBuilder setPostmarkDate(Instant postmarkDate) {
+    public DocumentBuilder setPostmarkDate(Instant postmarkDate) {
         this.postmarkDate = postmarkDate;
         return this;
     }
 
-    public DocumentDtoBuilder setNumSimilarDocuments(int numSimilarDocuments) {
+    public DocumentBuilder setNumSimilarDocuments(int numSimilarDocuments) {
         this.numSimilarDocuments = numSimilarDocuments;
         return this;
     }
 
-    public DocumentDtoBuilder setAddressId(int addressId) {
+    public DocumentBuilder setAddressId(int addressId) {
         this.addressId = addressId;
         return this;
     }
 
-    public DocumentDtoBuilder setTextId(int textId) {
+    public DocumentBuilder setTextId(int textId) {
         this.textId = textId;
         return this;
     }
 
-    public DocumentDto build() {
-        return new DocumentDto(accountNumber, ssn, letterDate, dateOfBirth, postmarkDate, numSimilarDocuments, addressId, textId);
+    public Document build() {
+        return new Document(accountNumber, ssn, letterDate, dateOfBirth, postmarkDate, numSimilarDocuments, addressId, textId);
     }
 }

@@ -10,7 +10,7 @@ import java.util.Objects;
  * This class represents a row in the document_images table.
  */
 @SuppressWarnings("WeakerAccess")
-public final class DocumentImageDto {
+public final class DocumentImage {
 
     public static final int PAGE_NUM_ENVELOPE = -1;
 
@@ -22,7 +22,7 @@ public final class DocumentImageDto {
     private ImageType imageType;
     private int documentId;
 
-    DocumentImageDto(byte[] fileData, int pageNumber, boolean isEnvelope, ImageType imageType, int documentId) {
+    DocumentImage(byte[] fileData, int pageNumber, boolean isEnvelope, ImageType imageType, int documentId) {
         this.fileData = fileData;
         this.pageNumber = pageNumber;
         this.isEnvelope = isEnvelope;
@@ -30,8 +30,8 @@ public final class DocumentImageDto {
         this.documentId = documentId;
     }
 
-    public static DocumentImageDtoBuilder builder() {
-        return new DocumentImageDtoBuilder();
+    public static DocumentImageBuilder builder() {
+        return new DocumentImageBuilder();
     }
 
     public void setId(int id) {
@@ -66,7 +66,7 @@ public final class DocumentImageDto {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DocumentImageDto that = (DocumentImageDto) o;
+        DocumentImage that = (DocumentImage) o;
         return getId() == that.getId() &&
                 getPageNumber() == that.getPageNumber() &&
                 isEnvelope() == that.isEnvelope() &&
@@ -84,7 +84,7 @@ public final class DocumentImageDto {
 
     @Override
     public String toString() {
-        return "DocumentImageDto{" +
+        return "DocumentImage{" +
                 "id=" + id +
                 ", fileData=" + Arrays.toString(fileData) +
                 ", pageNumber=" + pageNumber +

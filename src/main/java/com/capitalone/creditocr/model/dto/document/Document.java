@@ -5,7 +5,7 @@ import org.springframework.lang.Nullable;
 import java.time.Instant;
 import java.util.Objects;
 
-public final class DocumentDto {
+public final class Document {
 
 
     private int id = -1;
@@ -29,9 +29,9 @@ public final class DocumentDto {
     private int addressId;
 
 
-    public DocumentDto(long accountNumber, @Nullable String ssn, @Nullable Instant letterDate,
-                       @Nullable Instant dateOfBirth, @Nullable Instant postmarkDate, int numSimilarDocuments,
-                       int addressId, int textId) {
+    public Document(long accountNumber, @Nullable String ssn, @Nullable Instant letterDate,
+                    @Nullable Instant dateOfBirth, @Nullable Instant postmarkDate, int numSimilarDocuments,
+                    int addressId, int textId) {
         this.accountNumber = accountNumber;
         this.ssn = ssn;
         this.letterDate = letterDate;
@@ -41,8 +41,8 @@ public final class DocumentDto {
         this.addressId = addressId;
     }
 
-    public static DocumentDtoBuilder builder() {
-        return new DocumentDtoBuilder();
+    public static DocumentBuilder builder() {
+        return new DocumentBuilder();
     }
 
     public void setAddressId(int addressId) {
@@ -93,7 +93,7 @@ public final class DocumentDto {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DocumentDto that = (DocumentDto) o;
+        Document that = (Document) o;
         return getAccountNumber() == that.getAccountNumber() &&
                 getNumSimilarDocuments() == that.getNumSimilarDocuments() &&
                 getAddressId() == that.getAddressId() &&
@@ -112,7 +112,7 @@ public final class DocumentDto {
 
     @Override
     public String toString() {
-        return "DocumentDto{" +
+        return "Document{" +
                 "accountNumber=" + accountNumber +
                 ", ssn='" + ssn + '\'' +
                 ", letterDate=" + letterDate +

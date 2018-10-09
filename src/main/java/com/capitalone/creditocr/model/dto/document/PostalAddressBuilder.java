@@ -1,6 +1,6 @@
 package com.capitalone.creditocr.model.dto.document;
 
-public class PostalAddressDtoBuilder {
+public class PostalAddressBuilder {
     private String firstLine;
     private String secondLine;
     private String city;
@@ -8,37 +8,37 @@ public class PostalAddressDtoBuilder {
     private String postalCode;
     private String country;
 
-    public PostalAddressDtoBuilder setFirstLine(String firstLine) {
+    public PostalAddressBuilder setFirstLine(String firstLine) {
         this.firstLine = firstLine;
         return this;
     }
 
-    public PostalAddressDtoBuilder setSecondLine(String secondLine) {
+    public PostalAddressBuilder setSecondLine(String secondLine) {
         this.secondLine = secondLine;
         return this;
     }
 
-    public PostalAddressDtoBuilder setCity(String city) {
+    public PostalAddressBuilder setCity(String city) {
         this.city = city;
         return this;
     }
 
-    public PostalAddressDtoBuilder setState(String state) {
+    public PostalAddressBuilder setState(String state) {
         this.state = state;
         return this;
     }
 
-    public PostalAddressDtoBuilder setPostalCode(String postalCode) {
+    public PostalAddressBuilder setPostalCode(String postalCode) {
         this.postalCode = postalCode;
         return this;
     }
 
-    public PostalAddressDtoBuilder setCountry(String country) {
+    public PostalAddressBuilder setCountry(String country) {
         this.country = country;
         return this;
     }
 
-    public PostalAddressDto build() {
-        return new PostalAddressDto(firstLine, secondLine, city, state, postalCode, country);
+    public PostalAddress build() {
+        return new PostalAddress(firstLine, secondLine, city, state, postalCode, country);
     }
 }
