@@ -28,11 +28,6 @@ public final class DocumentDto {
 
     private int addressId;
 
-    /**
-     * A foreign key to get document text
-     */
-    private int textId;
-
 
     public DocumentDto(long accountNumber, @Nullable String ssn, @Nullable Instant letterDate,
                        @Nullable Instant dateOfBirth, @Nullable Instant postmarkDate, int numSimilarDocuments,
@@ -44,7 +39,6 @@ public final class DocumentDto {
         this.postmarkDate = postmarkDate;
         this.numSimilarDocuments = numSimilarDocuments;
         this.addressId = addressId;
-        this.textId = textId;
     }
 
     public static DocumentDtoBuilder builder() {
@@ -53,6 +47,10 @@ public final class DocumentDto {
 
     public void setAddressId(int addressId) {
         this.addressId = addressId;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public int getId() {
@@ -91,10 +89,6 @@ public final class DocumentDto {
         return addressId;
     }
 
-    public int getTextId() {
-        return textId;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -103,7 +97,6 @@ public final class DocumentDto {
         return getAccountNumber() == that.getAccountNumber() &&
                 getNumSimilarDocuments() == that.getNumSimilarDocuments() &&
                 getAddressId() == that.getAddressId() &&
-                getTextId() == that.getTextId() &&
                 Objects.equals(getSsn(), that.getSsn()) &&
                 Objects.equals(getLetterDate(), that.getLetterDate()) &&
                 Objects.equals(getDateOfBirth(), that.getDateOfBirth()) &&
@@ -113,7 +106,7 @@ public final class DocumentDto {
     @Override
     public int hashCode() {
         return Objects.hash(getAccountNumber(), getSsn(), getLetterDate(), getDateOfBirth(), getPostmarkDate(),
-                getNumSimilarDocuments(), getAddressId(), getTextId());
+                getNumSimilarDocuments(), getAddressId());
     }
 
 
@@ -127,7 +120,6 @@ public final class DocumentDto {
                 ", postmarkDate=" + postmarkDate +
                 ", numSimilarDocuments=" + numSimilarDocuments +
                 ", addressId=" + addressId +
-                ", textId=" + textId +
                 '}';
     }
 }

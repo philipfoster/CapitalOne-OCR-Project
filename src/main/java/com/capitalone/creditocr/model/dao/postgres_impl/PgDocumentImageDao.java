@@ -1,12 +1,10 @@
 package com.capitalone.creditocr.model.dao.postgres_impl;
 
 import com.capitalone.creditocr.model.dao.DocumentImageDao;
-import com.capitalone.creditocr.model.dto.ImageType;
 import com.capitalone.creditocr.model.dto.document_image.DocumentImageDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -41,46 +39,24 @@ public class PgDocumentImageDao implements DocumentImageDao {
     private final DataSource dataSource;
 
 
-    private static final RowMapper<DocumentImageDto> ROW_MAPPER = (rs, rowNum) -> DocumentImageDto.builder()
-            .setFileData(rs.getBytes("file_data"))
-            .setImageType(ImageType.valueOf(rs.getString("image_format")))
-            .setPageNumber(rs.getInt("page_number"))
-            .setIsEnvelope(rs.getBoolean("is_envelope"))
-            .build();
-
     @Autowired
     public PgDocumentImageDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-
-//    @Override
-//    public void addNewImage(byte[] data, ImageType imageType, int pageNum) {
-//        //language=sql
-//        String sql = "INSERT INTO document_images (file_data, page_number, image_format, is_envelope) " +
-//                     "      VALUES (:fileData, :pageNum, :format::image_format, :isEnvelope);";
-//
-//        MapSqlParameterSource source = new MapSqlParameterSource()
-//                .addValue("fileData", data)
-//                .addValue("pageNum", pageNum == PAGE_NUM_ENVELOPE ? null : pageNum)
-//                .addValue("format", imageType.toString())
-//                .addValue("isEnvelope", pageNum == PAGE_NUM_ENVELOPE);
-//
-//        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
-//        template.update(sql, source);
-//    }
-
     @Override
     public void addNewImage(DocumentImageDto image) {
 
-        String sql = "INSERT INTO document_images (file_data, page_number, image_format, is_envelope) " +
-                "      VALUES (:fileData, :pageNum, :format::image_format, :isEnvelope);";
+        String sql = "INSERT INTO document_images (file_data, page_number, image_format, is_envelope, document_id) " +
+                "      VALUES (:fileData, :pageNum, :format::image_format, :isEnvelope, :docId);";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
                 .addValue("fileData", image.getFileData())
                 .addValue("pageNum", image.getPageNumber() == PAGE_NUM_ENVELOPE ? null : image.getPageNumber())
                 .addValue("format", image.getImageType().toString())
-                .addValue("isEnvelope", image.getPageNumber() == PAGE_NUM_ENVELOPE);
+                .addValue("isEnvelope", image.getPageNumber() == PAGE_NUM_ENVELOPE)
+                .addValue("docId", image.getDocumentId());
+
 
         NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
         KeyHolder holder = new GeneratedKeyHolder();

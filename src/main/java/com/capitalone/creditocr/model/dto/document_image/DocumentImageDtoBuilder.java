@@ -7,6 +7,7 @@ public class DocumentImageDtoBuilder {
     private int pageNumber = -1;
     private boolean isEnvelope = false;
     private ImageType imageType;
+    private int documentId;
 
     public DocumentImageDtoBuilder setFileData(byte[] fileData) {
         this.fileData = fileData;
@@ -29,7 +30,12 @@ public class DocumentImageDtoBuilder {
         return this;
     }
 
+    public DocumentImageDtoBuilder setDocumentId(int documentId) {
+        this.documentId = documentId;
+        return this;
+    }
+
     public DocumentImageDto build() {
-        return new DocumentImageDto(fileData, pageNumber, isEnvelope, imageType);
+        return new DocumentImageDto(fileData, pageNumber, isEnvelope, imageType, documentId);
     }
 }

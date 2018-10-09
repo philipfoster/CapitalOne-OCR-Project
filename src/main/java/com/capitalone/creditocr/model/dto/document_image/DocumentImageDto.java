@@ -20,13 +20,14 @@ public final class DocumentImageDto {
     private int pageNumber;
     private boolean isEnvelope;
     private ImageType imageType;
+    private int documentId;
 
-    DocumentImageDto(byte[] fileData, int pageNumber,
-                     boolean isEnvelope, ImageType imageType) {
+    DocumentImageDto(byte[] fileData, int pageNumber, boolean isEnvelope, ImageType imageType, int documentId) {
         this.fileData = fileData;
         this.pageNumber = pageNumber;
         this.isEnvelope = isEnvelope;
         this.imageType = imageType;
+        this.documentId = documentId;
     }
 
     public static DocumentImageDtoBuilder builder() {
@@ -57,15 +58,8 @@ public final class DocumentImageDto {
         return imageType;
     }
 
-    @Override
-    public String toString() {
-        return "DocumentImageDto{" +
-                "id=" + id +
-                ", fileData=" + Arrays.toString(fileData) +
-                ", pageNumber=" + pageNumber +
-                ", isEnvelope=" + isEnvelope +
-                ", imageType=" + imageType +
-                '}';
+    public int getDocumentId() {
+        return documentId;
     }
 
     @Override
@@ -76,14 +70,27 @@ public final class DocumentImageDto {
         return getId() == that.getId() &&
                 getPageNumber() == that.getPageNumber() &&
                 isEnvelope() == that.isEnvelope() &&
+                documentId == that.documentId &&
                 Arrays.equals(getFileData(), that.getFileData()) &&
                 getImageType() == that.getImageType();
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(getId(), getPageNumber(), isEnvelope(), getImageType());
+        int result = Objects.hash(getId(), getPageNumber(), isEnvelope(), getImageType(), getDocumentId());
         result = 31 * result + Arrays.hashCode(getFileData());
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "DocumentImageDto{" +
+                "id=" + id +
+                ", fileData=" + Arrays.toString(fileData) +
+                ", pageNumber=" + pageNumber +
+                ", isEnvelope=" + isEnvelope +
+                ", imageType=" + imageType +
+                ", documentId=" + documentId +
+                '}';
     }
 }
