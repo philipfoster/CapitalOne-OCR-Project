@@ -5,9 +5,11 @@ import com.capitalone.creditocr.controller.exception.InternalServerErrorExceptio
 import com.capitalone.creditocr.controller.exception.UnsupportedFileTypeException;
 import com.capitalone.creditocr.model.dao.DocumentDao;
 import com.capitalone.creditocr.model.dao.DocumentImageDao;
+import com.capitalone.creditocr.model.dao.JobDao;
 import com.capitalone.creditocr.model.dto.ImageType;
 import com.capitalone.creditocr.model.dto.document.Document;
 import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
+import com.capitalone.creditocr.model.dto.job.ProcessingJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Instant;
 
 /**
  * This class is responsible for handling ingest requests.
@@ -31,11 +34,13 @@ public class UploadDocumentController {
 
     private final DocumentImageDao imageDao;
     private final DocumentDao documentDao;
+    private final JobDao jobDao;
 
     @Autowired
-    public UploadDocumentController(DocumentImageDao imageDao, DocumentDao documentDao) {
+    public UploadDocumentController(DocumentImageDao imageDao, DocumentDao documentDao, JobDao jobDao) {
         this.imageDao = imageDao;
         this.documentDao = documentDao;
+        this.jobDao = jobDao;
     }
 
     /**
@@ -83,6 +88,7 @@ public class UploadDocumentController {
     }
 
     private void storeImage(byte[] fileContent, ImageType contentType, int pageNum, Document document) {
+        // Save image to DB
         DocumentImage documentImage = DocumentImage.builder()
                 .setIsEnvelope(pageNum > 0)
                 .setPageNumber(pageNum)
@@ -93,7 +99,9 @@ public class UploadDocumentController {
 
         imageDao.addNewImage(documentImage);
 
-        // TODO: Generate job intent in the jobs table
+        // Create processing job intent
+        ProcessingJob intent = new ProcessingJob(Instant.now(), documentImage.getId());
+        jobDao.createJob(intent);
     }
 
 
