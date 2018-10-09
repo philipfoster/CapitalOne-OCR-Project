@@ -48,7 +48,7 @@ public class PgDocumentImageDao implements DocumentImageDao {
     public void addNewImage(DocumentImageDto image) {
 
         String sql = "INSERT INTO document_images (file_data, page_number, image_format, is_envelope, document_id) " +
-                "      VALUES (:fileData, :pageNum, :format::image_format, :isEnvelope, :docId);";
+                "      VALUES (:fileData, :pageNum, :format::image_type, :isEnvelope, :docId);";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
                 .addValue("fileData", image.getFileData())

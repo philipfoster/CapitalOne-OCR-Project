@@ -20,7 +20,11 @@ public enum ImageType {
      * @return The ImageType, or {@code null} if there is no matching enum constant.
      */
     @Nullable
-    public static ImageType fromContentType(String contentType) {
+    public static ImageType fromContentType(@Nullable String contentType) {
+        if (contentType == null) {
+            return null;
+        }
+
         switch (contentType.toLowerCase()) {
             case "image/jpeg":
             case "image/jpg":
