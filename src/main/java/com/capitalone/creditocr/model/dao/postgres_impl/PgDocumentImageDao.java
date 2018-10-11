@@ -54,7 +54,7 @@ public class PgDocumentImageDao implements DocumentImageDao {
                 .addValue("fileData", image.getFileData())
                 .addValue("pageNum", image.getPageNumber() == PAGE_NUM_ENVELOPE ? null : image.getPageNumber())
                 .addValue("format", image.getImageType().toString())
-                .addValue("isEnvelope", image.getPageNumber() == PAGE_NUM_ENVELOPE)
+                .addValue("isEnvelope", image.isEnvelope())
                 .addValue("docId", image.getDocumentId());
 
 

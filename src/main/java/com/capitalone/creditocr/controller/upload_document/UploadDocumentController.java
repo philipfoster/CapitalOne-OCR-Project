@@ -10,18 +10,25 @@ import com.capitalone.creditocr.model.dto.ImageType;
 import com.capitalone.creditocr.model.dto.document.Document;
 import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
+import com.capitalone.creditocr.util.UnzipUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.FileSystemUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class is responsible for handling ingest requests.
@@ -31,6 +38,8 @@ public class UploadDocumentController {
 
     private static final Logger logger = LoggerFactory.getLogger(UploadDocumentController.class);
     private static final String CONTENT_TYPE_ZIP = "application/zip";
+    private static final int PAGE_NUM_ENVELOPE = -1;
+    private static final String FILENAME_ENVELOPE = "envelope";
 
     private final DocumentImageDao imageDao;
     private final DocumentDao documentDao;
@@ -69,28 +78,119 @@ public class UploadDocumentController {
 
         logger.debug("Processing file. size = %d bytes, type = %s", fileContent.length, contentType);
 
-        // Add a blank row into the db as a placeholder. This also lets us get an auto-generated primary key for
-        // referencing by other tables.
-        Document document = Document.builder()
-                .build();
-        documentDao.createDocument(document);
-
-
         // Add the file to the database
         if (CONTENT_TYPE_ZIP.equals(contentType)) {
-            // TODO: Handle this case
-            // We will need to extract the images before uploading them
+            processZippedInput(fileContent);
+        } else {
+            // Add a blank row into the db as a placeholder. This also lets us get an auto-generated primary key for
+            // referencing by other tables.
+            Document document = Document.builder()
+                    .build();
+            documentDao.createDocument(document);
 
-            return;
+            storeImage(fileContent, ImageType.fromContentType(contentType), 0, document);
         }
-
-        storeImage(fileContent, ImageType.fromContentType(contentType), 0, document);
     }
 
-    private void storeImage(byte[] fileContent, ImageType contentType, int pageNum, Document document) {
+
+    private void processZippedInput(byte[] fileContent) {
+        Path workDir = null;
+
+        try {
+            // Extract the zipped contents and write them to a temp directory
+            workDir = Files.createTempDirectory("ingest");
+            Path unzipped = UnzipUtil.unzip(workDir.toFile(), fileContent).toPath();
+
+            // Java streams seem to be a more elegant solution, since it top level files are treated as
+            // different documents, while items grouped inside a folder are considered to be different parts of the same document.
+            // This makes a simple recursive solution tricky, as it requires separate logic to detect if this is a top-level file,
+            // as opposed to a grouped file. The groupingBy collector makes this easy.
+            Files.walk(unzipped, 2)
+                    .filter(path -> path.compareTo(unzipped) > 0)
+                    .collect(Collectors.groupingBy(Path::getParent))
+                    .forEach((parent, group) -> {
+                        if (parent.equals(unzipped)) {
+                            // Top-level files. Treat as unique.
+                            storeIndividualFiles(group);
+                        } else {
+                            // Grouped in directory. Treat as group of documents
+                            try {
+                                storeGroupedFiles(group);
+                            } catch (IOException e) {
+                                throw new InternalServerErrorException("Could not read file", e);
+                            }
+                        }
+                    });
+
+        } catch (IOException e) {
+            logger.error("Error occurred while writing files to disk.", e);
+            throw new InternalServerErrorException("Could not write files to disk", e);
+        } finally {
+            if (workDir != null) {
+                try {
+                    // Files.delete will just throw DirectoryNotEmpty exception, so use a spring utility.
+                    FileSystemUtils.deleteRecursively(workDir);
+                } catch (IOException e) {
+                    logger.error("Could not delete temp directory", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle the files in the root of the uploaded .zip directory.
+     */
+    private void storeIndividualFiles(List<Path> files) {
+        for (Path path : files) {
+            if (path.toFile().isDirectory()) {
+                // Don't try to ingest a directory. This will be handled by a later iteration
+                continue;
+            }
+            Document document = Document.builder().build();
+            documentDao.createDocument(document);
+//                                storeImage(fileContent, ImageType.fromPath(path), 0, document);
+
+            byte[] content;
+            try {
+                content = Files.readAllBytes(path);
+            } catch (IOException e) {
+                // Re-throw with an unchecked exception, since we can't throw
+                // a checked exception from here
+                throw new InternalServerErrorException("Could not read file from disk", e);
+            }
+            storeImage(content, ImageType.PNG, 0, document);
+        }
+    }
+
+    private void storeGroupedFiles(List<Path> files) throws IOException {
+        Document document = Document.builder().build();
+        documentDao.createDocument(document);
+
+        for (Path file : files) {
+            if (file.toFile().isDirectory()) { continue; }
+            String filename = file.toFile().getName().split("\\.")[0].toLowerCase();
+
+            int pageNum;
+            byte[] bytes = Files.readAllBytes(file);
+            if (FILENAME_ENVELOPE.equals(filename)) {
+                pageNum = PAGE_NUM_ENVELOPE;
+                storeImage(bytes, ImageType.fromPath(file), pageNum, document);
+            } else {
+                if (filename.matches("[0-9]+")) {
+                    pageNum = Integer.valueOf(filename);
+                    storeImage(bytes, ImageType.fromPath(file), pageNum, document);
+                } else {
+                    // TODO: Find better solution than skipping the page. Maybe try to infer a page number somehow??
+                    logger.error("Could not get page number for file " + file.getFileName());
+                }
+            }
+        }
+    }
+
+    private void storeImage(byte[] fileContent, @NonNull ImageType contentType, int pageNum, Document document) {
         // Save image to DB
         DocumentImage documentImage = DocumentImage.builder()
-                .setIsEnvelope(pageNum > 0)
+                .setIsEnvelope(pageNum < 0)
                 .setPageNumber(pageNum)
                 .setImageType(contentType)
                 .setFileData(fileContent)
@@ -103,7 +203,6 @@ public class UploadDocumentController {
         ProcessingJob intent = new ProcessingJob(Instant.now(), documentImage.getId());
         jobDao.createJob(intent);
     }
-
 
     /**
      * Check if the supplied Content-Type header is valid.
