@@ -9,10 +9,13 @@ RUN wget https://download.java.net/java/GA/jdk11/28/GPL/openjdk-11+28_linux-x64_
     rm -f /tmp/openjdk-11+28_linux-x64_bin.tar.gz && \
     echo This better work
 
-
 ENV JAVA_HOME /tmp/jdk-11
 
 ARG JAR_FILE
+
 COPY ${JAR_FILE} app.jar
+COPY tessdata tessdata
+
+ENV TESSDATA_PREFIX=/tessdata
 
 ENTRYPOINT ["/jdk-11/bin/java","-Djava.security.egd=file:/dev/./urandom","-jar","app.jar"]
