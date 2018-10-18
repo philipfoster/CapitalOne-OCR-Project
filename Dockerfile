@@ -9,7 +9,7 @@ RUN wget https://download.java.net/java/GA/jdk11/28/GPL/openjdk-11+28_linux-x64_
     rm -f /tmp/openjdk-11+28_linux-x64_bin.tar.gz && \
     echo This better work
 
-ENV JAVA_HOME /tmp/jdk-11
+ENV JAVA_HOME /jdk-11
 
 ARG JAR_FILE
 

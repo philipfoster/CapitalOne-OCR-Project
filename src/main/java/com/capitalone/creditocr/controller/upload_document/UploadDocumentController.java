@@ -15,12 +15,14 @@ import com.capitalone.creditocr.view.DocumentResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,13 +58,15 @@ public class UploadDocumentController {
     }
 
     /**
-     * Load the uploaded document into the database, and create a job intent.
+     * Load the uploaded document into the database, and create a job intent. Upon successfully completing the
+     * operation, a 202 status code will be returned instead of the normal 200.
      *
      * @param file The file from the request
      * @throws UnsupportedFileTypeException if the client attempts to upload a document with an invalid file type
      * @throws InternalServerErrorException if an unrecoverable error occurs.
-     */
+//     */
     @PostMapping("/documents")
+    @ResponseStatus(HttpStatus.ACCEPTED)
     @Transactional(rollbackFor = Exception.class)
     public List<DocumentResponse> processRequest(@RequestParam("file") MultipartFile file) {
 
@@ -106,7 +110,7 @@ public class UploadDocumentController {
             // Extract the zipped contents and write them to a temp directory
             workDir = Files.createTempDirectory("ingest");
             Path unzipped = UnzipUtil.unzip(workDir.toFile(), fileContent).toPath();
-
+            logger.info("path = " + workDir.toAbsolutePath());
             // Java streams seem to be a more elegant solution, since it top level files are treated as
             // different documents, while items grouped inside a folder are considered to be different parts of the same document.
             // This makes a simple recursive solution tricky, as it requires separate logic to detect if this is a top-level file,
