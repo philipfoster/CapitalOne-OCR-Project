@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import javax.sql.DataSource;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @Repository
 public class PgJobDao implements JobDao {
@@ -42,5 +43,10 @@ public class PgJobDao implements JobDao {
         Objects.requireNonNull(keyMap);
 
         job.setId((Integer) keyMap.get("id"));
+    }
+
+    @Override
+    public Optional<ProcessingJob> acceptNextJob(String serverId) {
+        return Optional.empty();
     }
 }
