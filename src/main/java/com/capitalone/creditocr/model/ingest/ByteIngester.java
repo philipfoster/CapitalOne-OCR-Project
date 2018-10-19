@@ -6,7 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
-
+/*
+* Grabs instance of Tesseract object when initialized,
+* and ingest will attempt to convert an image of a letter
+* to a String and return it.
+* Comment last updated: 10/19/2018
+* */
 @Service
 public class ByteIngester {
     private ITesseract tess;
