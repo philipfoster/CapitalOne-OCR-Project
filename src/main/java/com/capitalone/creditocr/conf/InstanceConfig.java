@@ -10,6 +10,6 @@ public class InstanceConfig {
     /**
      * A random UUID generated at the start of the
      */
-    public static final String INSTANCE_ID = UUID.randomUUID().toString();
+    public static final UUID INSTANCE_ID = UUID.randomUUID();
 
 }

@@ -23,7 +23,7 @@ public class JobProcessor {
 
     // Set max queue size to the number of CPU cores on the machine
     // TODO: Make this configurable.
-    private static final int JOB_QUEUE_SIZE = Runtime.getRuntime().availableProcessors();
+    private static final int JOB_QUEUE_SIZE = 2;
     private static final long MS_PER_SECOND = 1000L;
     private static final int MAX_TIMEOUT = 5;
 
@@ -52,9 +52,7 @@ public class JobProcessor {
      * Spawn thread that will query the database for new jobs and submit them to the executor service.
      */
     private void spawnDelegateThread() {
-        // This needs to be on a separate thread so that we don't block the constructor from completing.
         new Thread(() -> {
-            // The number of times in a row that there was no job to grab.
             int noOpIterations = 0;
             while (!stopFlag) {
                 boolean tooManyThreads;
@@ -65,9 +63,7 @@ public class JobProcessor {
                     tooManyThreads = activeThreadCount >= JOB_QUEUE_SIZE;
                 }
 
-                // Don't allow the thread pool to grow too large. This will cause processing times to grow for every task
-                // as it will take longer for a thread to get its turn on the CPU.
-                // If this grows too large, it may mean that more instances are needed.
+
                 // TODO: If this grows too big (more than some config value) trigger a warning.
                 if (tooManyThreads) {
                     noOpIterations++;
@@ -76,6 +72,7 @@ public class JobProcessor {
                 }
 
                 Optional<ProcessingJob> job = jobDao.acceptNextJob(InstanceConfig.INSTANCE_ID);
+                logger.debug("Accepted job " + job.toString());
 
                 if (!job.isPresent()) {
                     // This should reduce load on both the server and the database when few/no jobs are available
@@ -84,7 +81,6 @@ public class JobProcessor {
                 } else {
                     noOpIterations = 0;
 
-                    // Submit the processing job the the thread pool
                     synchronized (COUNT_LOCK) {
                         activeThreadCount++;
                     }
@@ -98,7 +94,17 @@ public class JobProcessor {
     }
 
     private void processJob(@NonNull ProcessingJob job) {
+        logger.debug("Processing job " + job);
 
+        try {
+            Thread.sleep(2 * MS_PER_SECOND);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        synchronized (COUNT_LOCK) {
+            activeThreadCount--;
+        }
     }
 
     private void sleep(int iteration) {
