@@ -1,10 +1,13 @@
 package com.capitalone.creditocr.model.dao.postgres_impl;
 
 import com.capitalone.creditocr.model.dao.DocumentImageDao;
+import com.capitalone.creditocr.model.dto.ImageType;
 import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
+import com.capitalone.creditocr.model.dto.job.ProcessingJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -12,8 +15,10 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.capitalone.creditocr.model.dto.document_image.DocumentImage.PAGE_NUM_ENVELOPE;
 
@@ -38,6 +43,18 @@ public class PgDocumentImageDao implements DocumentImageDao {
 
     private final DataSource dataSource;
 
+    private static final RowMapper<DocumentImage> ROW_MAPPER = (rs, rowNum) -> {
+        DocumentImage image = DocumentImage.builder()
+                .setFileData(rs.getBytes("file_data"))
+                .setDocumentId(rs.getInt("document_id"))
+                .setImageType(ImageType.valueOf(rs.getString("image_format")))
+                .setPageNumber(rs.getInt("page_number"))
+                .setIsEnvelope(rs.getBoolean("is_envelope"))
+                .build();
+
+        image.setId(rs.getInt("id"));
+        return image;
+    };
 
     @Autowired
     public PgDocumentImageDao(DataSource dataSource) {
@@ -67,5 +84,30 @@ public class PgDocumentImageDao implements DocumentImageDao {
 
         image.setId((Integer) keyMap.get("id"));
 
+    }
+
+    @Override
+    public Optional<DocumentImage> getImageFor(ProcessingJob job) {
+        //language=sql
+        String sql = "SELECT images.* FROM document_images as images, jobs, job_assignments " +
+                     " WHERE job_assignments.job_id = jobs.id " +
+                     "   AND jobs.id = :id " +
+                     "   AND jobs.document_image = images.id " +
+                     "   AND job_assignments.completed_at IS NULL;" ;
+
+        MapSqlParameterSource source = new MapSqlParameterSource()
+                .addValue("id", job.getId());
+        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+
+        List<DocumentImage> resp = template.query(sql, source, ROW_MAPPER);
+        if (resp.isEmpty()) {
+            return Optional.empty();
+        }
+
+        if (resp.size() > 1) {
+            logger.warn("Query returned more than 1 result! list = " + resp.toString());
+        }
+
+        return Optional.of(resp.get(0));
     }
 }

@@ -24,7 +24,7 @@ public class PgJobDao implements JobDao {
     private final DataSource dataSource;
     private static final Logger logger = LoggerFactory.getLogger(PgJobDao.class);
 
-    public static final RowMapper<ProcessingJob> ROW_MAPPER = (rs, rowNum) -> {
+    private static final RowMapper<ProcessingJob> ROW_MAPPER = (rs, rowNum) -> {
         int id = rs.getInt("id");
         Instant created = TimeUtils.date2instant(rs.getDate("created_at"));
         int imgId = rs.getInt("document_image");
@@ -98,5 +98,18 @@ public class PgJobDao implements JobDao {
         template.update(sql, source);
 
         return Optional.of(job);
+    }
+
+    @Override
+    public void completeJob(ProcessingJob job) {
+        //language=sql
+        String sql = "UPDATE job_assignments set completed_at = now() " +
+                     " WHERE job_id = :id;";
+
+        MapSqlParameterSource source = new MapSqlParameterSource()
+                .addValue("id", job.getId());
+        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+        template.update(sql, source);
+
     }
 }

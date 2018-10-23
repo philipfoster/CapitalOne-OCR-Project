@@ -31,4 +31,5 @@ public interface JobDao {
      */
     Optional<ProcessingJob> acceptNextJob(UUID serverId);
 
+    void completeJob(ProcessingJob job);
 }

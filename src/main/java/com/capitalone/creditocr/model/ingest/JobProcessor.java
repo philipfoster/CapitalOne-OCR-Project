@@ -1,7 +1,9 @@
 package com.capitalone.creditocr.model.ingest;
 
 import com.capitalone.creditocr.conf.InstanceConfig;
+import com.capitalone.creditocr.model.dao.DocumentImageDao;
 import com.capitalone.creditocr.model.dao.JobDao;
+import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,11 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
+import java.awt.image.BufferedImage;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 @Service
@@ -21,31 +26,30 @@ public class JobProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(JobProcessor.class);
 
-    // Set max queue size to the number of CPU cores on the machine
     // TODO: Make this configurable.
-    private static final int JOB_QUEUE_SIZE = 2;
+    private static final int JOB_QUEUE_SIZE = 4;
     private static final long MS_PER_SECOND = 1000L;
     private static final int MAX_TIMEOUT = 5;
+    private static final Random random = new Random();
 
-
-//    private final ByteIngester ingester;
+    private final ByteIngester ingester;
     private final JobDao jobDao;
+    private final DocumentImageDao imageDao;
 
     private volatile boolean stopFlag = false;
 
-    private volatile int activeThreadCount = 0;
-    private final Object COUNT_LOCK = new Object();
-
+    private final AtomicInteger activeThreadCount = new AtomicInteger(0);
     private ExecutorService executor = Executors.newCachedThreadPool();
     private CountDownLatch delegateLatch = new CountDownLatch(1);
 
 
     @Autowired
-    public JobProcessor(JobDao jobDao) {
-//        this.ingester = ingester;
+    public JobProcessor(JobDao jobDao, DocumentImageDao imageDao, ByteIngester ingester) {
+        this.imageDao = imageDao;
+        this.jobDao = jobDao;
+        this.ingester = ingester;
         logger.info("JobProcessor spawning worker thread");
         spawnDelegateThread();
-        this.jobDao = jobDao;
     }
 
     /**
@@ -59,10 +63,7 @@ public class JobProcessor {
 
                 // This method may allow slightly more than JOB_QUEUE_SIZE threads to be created, but it should be
                 // small enough that it does not matter.
-                synchronized (COUNT_LOCK) {
-                    tooManyThreads = activeThreadCount >= JOB_QUEUE_SIZE;
-                }
-
+                tooManyThreads = activeThreadCount.get() >= JOB_QUEUE_SIZE;
 
                 // TODO: If this grows too big (more than some config value) trigger a warning.
                 if (tooManyThreads) {
@@ -81,30 +82,45 @@ public class JobProcessor {
                 } else {
                     noOpIterations = 0;
 
-                    synchronized (COUNT_LOCK) {
-                        activeThreadCount++;
-                    }
+                    activeThreadCount.incrementAndGet();
                     executor.submit(() -> processJob(job.get()));
                 }
 
             }
             delegateLatch.countDown();
-            logger.info("JobProcessor worker threqgad exited");
+            logger.info("JobProcessor worker thread exited");
         }).start();
     }
 
+    /**
+     * Process an image.
+     */
     private void processJob(@NonNull ProcessingJob job) {
         logger.debug("Processing job " + job);
+        DocumentImage image = getImageFor(job);
 
         try {
-            Thread.sleep(2 * MS_PER_SECOND);
+            Thread.sleep((random.nextInt(5)+1) * MS_PER_SECOND);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        synchronized (COUNT_LOCK) {
-            activeThreadCount--;
+        jobDao.completeJob(job);
+        activeThreadCount.decrementAndGet();
+    }
+
+    /**
+     * Get the image from the database for a specific job, and convert it to a {@link BufferedImage}
+     */
+    @NonNull
+    private DocumentImage getImageFor(ProcessingJob job) {
+        Optional<DocumentImage> image = imageDao.getImageFor(job);
+        if (!image.isPresent()) {
+            // This should not happen
+            logger.error("Could not find matching image for job " + job);
+            throw new IllegalStateException("Could not load image from the database for job " + job);
         }
+        return image.get();
     }
 
     private void sleep(int iteration) {
