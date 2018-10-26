@@ -25,11 +25,13 @@ public class CreditOcrApplication extends SpringBootServletInitializer {
     }
 
     @Bean
-    public ITesseract provideTesseract() {
-        ITesseract instance = new Tesseract();
-        instance.setDatapath( System.getenv("TESSDATA_PREFIX") );
-        instance.setLanguage("eng");
+    public ThreadLocal<ITesseract> provideTesseract() {
+        return ThreadLocal.withInitial(() -> {
+            ITesseract instance = new Tesseract();
+            instance.setDatapath( System.getenv("TESSDATA_PREFIX") );
+            instance.setLanguage("eng");
 
-        return instance;
+            return instance;
+        });
     }
 }

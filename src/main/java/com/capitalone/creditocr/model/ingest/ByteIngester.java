@@ -12,12 +12,13 @@ import java.awt.image.BufferedImage;
 
 @Service
 public class ByteIngester {
-    private ITesseract tess;
+
+    private ThreadLocal<ITesseract> tess;
 
     private static final Logger logger = LoggerFactory.getLogger(ByteIngester.class);
 
     @Autowired
-    public ByteIngester(ITesseract t) {
+    public ByteIngester(ThreadLocal<ITesseract> t) {
         tess = t;
     }
 
@@ -25,7 +26,7 @@ public class ByteIngester {
     public String ingest(BufferedImage img) {
         String output = null;
         try {
-            output = tess.doOCR(img);
+            output = tess.get().doOCR(img);
             logger.trace(String.format("Document output = %s", output));
         } catch (TesseractException e){
             logger.error("Could not extract OCR text", e);

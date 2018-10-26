@@ -26,7 +26,7 @@ public class JobProcessor {
     private final Logger logger = LoggerFactory.getLogger(JobProcessor.class);
 
     // TODO: Make this configurable.
-    private static final int JOB_QUEUE_SIZE = 1;
+    private static final int JOB_QUEUE_SIZE = 4;
     private static final long MS_PER_SECOND = 1000L;
     private static final int MAX_TIMEOUT = 5;
 
@@ -98,7 +98,7 @@ public class JobProcessor {
         DocumentImage image = getImageFor(job);
         String text = ingester.ingest(image.toBufferedImage());
         logger.info("text = " + text);
-//
+
 //        try {
 //            Thread.sleep((random.nextInt(5)+1) * MS_PER_SECOND);
 //        } catch (InterruptedException e) {
