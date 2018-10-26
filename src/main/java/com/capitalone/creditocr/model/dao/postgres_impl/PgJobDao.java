@@ -1,5 +1,6 @@
 package com.capitalone.creditocr.model.dao.postgres_impl;
 
+import com.capitalone.creditocr.controller.job_status.JobStatusEnum;
 import com.capitalone.creditocr.model.dao.JobDao;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
 import com.capitalone.creditocr.util.TimeUtils;
@@ -15,8 +16,11 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
+import java.sql.Date;
 import java.time.Instant;
 import java.util.*;
+
+
 
 @Repository
 public class PgJobDao implements JobDao {
@@ -30,6 +34,17 @@ public class PgJobDao implements JobDao {
         int imgId = rs.getInt("document_image");
 
         return new ProcessingJob(id, created, imgId);
+    };
+
+    private static final RowMapper<Map<String, Date>> DATE_ROW_MAPPER = (rs, rowNum) -> {
+        Date accepted = rs.getDate("accepted_at");
+        Date completed = rs.getDate("completed_at");
+
+        Map<String, Date> assignmentMap = new HashMap<>();
+        assignmentMap.put("accepted_at", accepted);
+        assignmentMap.put("completed_at", completed);
+
+        return assignmentMap;
     };
 
     @Autowired
@@ -111,5 +126,49 @@ public class PgJobDao implements JobDao {
         NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
         template.update(sql, source);
 
+    }
+
+    @Override
+    public Optional<ProcessingJob> getJobByID(int id) {
+        //language=sql
+        String sql = "SELECT * FROM jobs WHERE id = :id;";
+
+        MapSqlParameterSource source = new MapSqlParameterSource()
+                .addValue("id", id);
+        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+        List<ProcessingJob> jobList = template.query(sql, source, ROW_MAPPER);
+
+        // If no job is found, the list is considered empty.
+        if (jobList.isEmpty()) {
+            return Optional.empty();
+        }
+        // Otherwise, the list should only have value, so return the first value.
+        else {
+            return Optional.of(jobList.get(0));
+        }
+
+    }
+
+    @Override
+    public JobStatusEnum getJobStatus(int id) {
+        //language=sql
+        String sql = "SELECT * FROM job_assignments WHERE job_id = :id;";
+
+        MapSqlParameterSource source = new MapSqlParameterSource()
+                .addValue("id", id);
+        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+        List<Map<String,Date>> jobList = template.query(sql, source, DATE_ROW_MAPPER);
+
+        if (jobList.isEmpty()) {
+            return JobStatusEnum.PENDING;
+        }
+        else {
+            if (jobList.get(0).get("completed_at") == null) {
+                return JobStatusEnum.PROCESSING;
+            }
+            else {
+                return JobStatusEnum.COMPLETED;
+            }
+        }
     }
 }

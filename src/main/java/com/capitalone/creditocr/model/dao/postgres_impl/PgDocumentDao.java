@@ -3,6 +3,7 @@ package com.capitalone.creditocr.model.dao.postgres_impl;
 import com.capitalone.creditocr.model.dao.DocumentDao;
 import com.capitalone.creditocr.model.dto.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import javax.sql.DataSource;
 import java.sql.Date;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -51,6 +53,23 @@ public class PgDocumentDao implements DocumentDao {
         Objects.requireNonNull(keyMap);
 
         document.setId((Integer) keyMap.get("id"));
+    }
+
+    @Override
+    public int getDocumentIDbyJob(int id) {
+        //language=sql
+        String sql = "SELECT document_id FROM document_images JOIN jobs " +
+                "ON jobs.document_image=document_images.id WHERE jobs.id=:id";
+
+        MapSqlParameterSource source = new MapSqlParameterSource()
+                .addValue("id",id);
+
+        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+
+        RowMapper<Integer> rmap = (results, rowNumber) -> results.getInt("document_id");
+        List<Integer> idList = template.query(sql, source, rmap);
+
+        return idList.get(0);
     }
 
 

@@ -1,5 +1,6 @@
 package com.capitalone.creditocr.model.dao;
 
+import com.capitalone.creditocr.controller.job_status.JobStatusEnum;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
 
 import java.util.List;
@@ -32,4 +33,8 @@ public interface JobDao {
     Optional<ProcessingJob> acceptNextJob(UUID serverId);
 
     void completeJob(ProcessingJob job);
+
+    Optional<ProcessingJob> getJobByID(int id);
+
+    JobStatusEnum getJobStatus(int id);
 }

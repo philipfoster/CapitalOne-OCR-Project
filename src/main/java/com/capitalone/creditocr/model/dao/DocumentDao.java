@@ -12,4 +12,6 @@ public interface DocumentDao {
      */
     void createDocument(Document document);
 
+    int getDocumentIDbyJob(int id);
+
 }
