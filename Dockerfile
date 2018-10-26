@@ -13,9 +13,9 @@ ENV JAVA_HOME /jdk-11
 
 ARG JAR_FILE
 
-COPY ${JAR_FILE} app.jar
 COPY tessdata tessdata
-
 ENV TESSDATA_PREFIX=/tessdata
+
+COPY ${JAR_FILE} app.jar
 
 ENTRYPOINT ["/jdk-11/bin/java","-Djava.security.egd=file:/dev/./urandom","-jar","app.jar"]

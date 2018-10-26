@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,10 +26,9 @@ public class JobProcessor {
     private final Logger logger = LoggerFactory.getLogger(JobProcessor.class);
 
     // TODO: Make this configurable.
-    private static final int JOB_QUEUE_SIZE = 4;
+    private static final int JOB_QUEUE_SIZE = 1;
     private static final long MS_PER_SECOND = 1000L;
     private static final int MAX_TIMEOUT = 5;
-    private static final Random random = new Random();
 
     private final ByteIngester ingester;
     private final JobDao jobDao;
@@ -98,12 +96,14 @@ public class JobProcessor {
     private void processJob(@NonNull ProcessingJob job) {
         logger.debug("Processing job " + job);
         DocumentImage image = getImageFor(job);
-
-        try {
-            Thread.sleep((random.nextInt(5)+1) * MS_PER_SECOND);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        String text = ingester.ingest(image.toBufferedImage());
+        logger.info("text = " + text);
+//
+//        try {
+//            Thread.sleep((random.nextInt(5)+1) * MS_PER_SECOND);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
 
         jobDao.completeJob(job);
         activeThreadCount.decrementAndGet();
