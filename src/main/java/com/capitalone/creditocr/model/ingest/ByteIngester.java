@@ -10,28 +10,29 @@ import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
 /*
+* Created by: Jacob Camacho
 * Grabs instance of Tesseract object when initialized,
 * and ingest will attempt to convert an image of a letter
 * to a String and return it.
-* Comment last updated: 10/19/2018
+* Comment last updated: 10/26/2018
 * */
 @Service
 public class ByteIngester {
 
-    private ThreadLocal<ITesseract> tess;
+    private ThreadLocal<ITesseract> tes;
 
     private static final Logger logger = LoggerFactory.getLogger(ByteIngester.class);
 
     @Autowired
-    public ByteIngester(ThreadLocal<ITesseract> t) {
-        tess = t;
+    public ByteIngester(ThreadLocal<ITesseract> tes) {
+        this.tes = tes;
     }
 
     @Nullable
     public String ingest(BufferedImage img) {
         String output = null;
         try {
-            output = tess.get().doOCR(img);
+            output = tes.get().doOCR(img);
             logger.trace(String.format("Document output = %s", output));
         } catch (TesseractException e){
             logger.error("Could not extract OCR text", e);
