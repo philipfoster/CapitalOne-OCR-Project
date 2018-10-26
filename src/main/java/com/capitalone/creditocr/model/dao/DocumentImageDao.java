@@ -1,6 +1,9 @@
 package com.capitalone.creditocr.model.dao;
 
 import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
+import com.capitalone.creditocr.model.dto.job.ProcessingJob;
+
+import java.util.Optional;
 
 /**
  * DAO interface for {@link DocumentImage}
@@ -17,4 +20,5 @@ public interface DocumentImageDao {
      */
     void addNewImage(DocumentImage document);
 
+    Optional<DocumentImage> getImageFor(ProcessingJob id);
 }

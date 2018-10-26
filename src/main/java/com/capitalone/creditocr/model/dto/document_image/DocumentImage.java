@@ -3,6 +3,10 @@ package com.capitalone.creditocr.model.dto.document_image;
 
 import com.capitalone.creditocr.model.dto.ImageType;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -62,6 +66,15 @@ public final class DocumentImage {
         return documentId;
     }
 
+    public BufferedImage toBufferedImage() {
+        try (ByteArrayInputStream bytes = new ByteArrayInputStream(fileData)) {
+            return ImageIO.read(bytes);
+        } catch (IOException e) {
+//            logger.error("Could not read image", e);
+            return null;
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -86,7 +99,7 @@ public final class DocumentImage {
     public String toString() {
         return "DocumentImage{" +
                 "id=" + id +
-                ", fileData=" + Arrays.toString(fileData) +
+                ", fileData=" + fileData.length + " bytes "+
                 ", pageNumber=" + pageNumber +
                 ", isEnvelope=" + isEnvelope +
                 ", imageType=" + imageType +

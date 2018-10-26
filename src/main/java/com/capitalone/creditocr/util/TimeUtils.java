@@ -22,4 +22,12 @@ public class TimeUtils {
         }
     }
 
+    @Nullable
+    public static Instant date2instant(@Nullable Date date) {
+        if (date == null) {
+            return null;
+        } else {
+            return Instant.ofEpochMilli(date.getTime());
+        }
+    }
 }
