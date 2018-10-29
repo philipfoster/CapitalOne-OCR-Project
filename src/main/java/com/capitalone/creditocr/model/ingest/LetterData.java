@@ -21,8 +21,8 @@ public class LetterData {
     //Social Security Number (Ex: 123-45-6789)
     private String SSN = "";
 
-    public LetterData() {
-        //TODO: Get text via ByteIngester
+    public LetterData(String text) {
+        this.text = text;
     }
 
     public String getText() {
