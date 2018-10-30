@@ -2,7 +2,9 @@ package com.capitalone.creditocr.model.ingest;
 
 import com.capitalone.creditocr.conf.InstanceConfig;
 import com.capitalone.creditocr.model.dao.DocumentImageDao;
+import com.capitalone.creditocr.model.dao.DocumentTextDao;
 import com.capitalone.creditocr.model.dao.JobDao;
+import com.capitalone.creditocr.model.dto.document.DocumentText;
 import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
 import org.slf4j.Logger;
@@ -33,6 +35,7 @@ public class JobProcessor {
     private final ByteIngester ingester;
     private final JobDao jobDao;
     private final DocumentImageDao imageDao;
+    private final DocumentTextDao textDao;
 
     private volatile boolean stopFlag = false;
 
@@ -42,12 +45,13 @@ public class JobProcessor {
 
 
     @Autowired
-    public JobProcessor(JobDao jobDao, DocumentImageDao imageDao, ByteIngester ingester) {
+    public JobProcessor(JobDao jobDao, DocumentImageDao imageDao, ByteIngester ingester, DocumentTextDao textDao) {
         this.imageDao = imageDao;
         this.jobDao = jobDao;
         this.ingester = ingester;
         logger.info("JobProcessor spawning worker thread");
         spawnDelegateThread();
+        this.textDao = textDao;
     }
 
     /**
@@ -96,8 +100,10 @@ public class JobProcessor {
     private void processJob(@NonNull ProcessingJob job) {
         logger.debug("Processing job " + job);
         DocumentImage image = getImageFor(job);
-        String text = ingester.ingest(image.toBufferedImage());
-        logger.info("text = " + text);
+        String rawText = ingester.ingest(image.toBufferedImage());
+//        logger.info("text = " + text);
+        DocumentText text = new DocumentText(rawText, image.getId());
+        textDao.addDocumentText(text);
 
 //        try {
 //            Thread.sleep((random.nextInt(5)+1) * MS_PER_SECOND);
