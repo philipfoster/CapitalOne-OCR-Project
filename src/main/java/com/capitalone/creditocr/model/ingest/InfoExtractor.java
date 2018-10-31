@@ -1,20 +1,16 @@
 package com.capitalone.creditocr.model.ingest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class InfoExtractor {
 
     /*
-    Method to extract first and last name from the text. This
-    should get values for firstName and lastName.
+    Method to extract name and address data from the text. These
+    two items are grouped due to their frequent proximity to
+    each other. This method should get values for firstName,
+    lastName, addressLine1, zipcode, and cityState.
     */
-    public void extractName(LetterData letter) {
-        //TODO
-    }
-
-    /*
-    Method to extract address data from the text. This should
-    get values for addressLine1, zipcode, and cityState.
-    */
-    public void extractAddress(LetterData letter) {
+    public void extractNameAndAddress(LetterData letter) {
         //TODO
     }
 
@@ -23,7 +19,22 @@ public class InfoExtractor {
     This should get values for letterDate and acctNum.
     */
     public void extractDate(LetterData letter) {
-        //TODO
+        String text = letter.getText();
+        String pattern1 = "\\d+/\\d+/\\d+";      // 12/25/2018
+        String pattern2 = "\\d+-\\d+-\\d+";      // 12-25-2018
+        String pattern3 = "\\w+\\s\\d+,\\s\\d+"; // December 25, 2018
+        Pattern p1 = Pattern.compile(pattern1);
+        Pattern p2 = Pattern.compile(pattern2);
+        Pattern p3 = Pattern.compile(pattern3);
+        Matcher m1 = p1.matcher(text);
+        Matcher m2 = p2.matcher(text);
+        Matcher m3 = p3.matcher(text);
+        if(m1.find())
+            letter.setLetterDate(m1.group(0));
+        else if(m2.find())
+            letter.setLetterDate(m2.group(0));
+        else if(m3.find())
+            letter.setLetterDate(m3.group(0));
     }
 
     /*
