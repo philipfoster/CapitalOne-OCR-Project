@@ -18,7 +18,7 @@ public class InfoExtractor {
     Method to extract date and account number from the text.
     This should get values for letterDate and acctNum.
     */
-    public void extractDate(LetterData letter) {
+    public LetterData extractDate(LetterData letter) {
         String text = letter.getText();
         String pattern1 = "\\d+/\\d+/\\d+";      // 12/25/2018
         String pattern2 = "\\d+-\\d+-\\d+";      // 12-25-2018
@@ -35,6 +35,7 @@ public class InfoExtractor {
             letter.setLetterDate(m2.group(0));
         else if(m3.find())
             letter.setLetterDate(m3.group(0));
+        return letter;
     }
 
     /*
@@ -42,7 +43,16 @@ public class InfoExtractor {
     and if applicable, a Social Security Number, from the text.
     This should get values for acctNum and SSN.
     */
-    public void extractNumbers(LetterData letter) {
-        //TODO
+    public LetterData extractNumbers(LetterData letter) {
+        //Extract SSN from text
+        String SSNpattern = "\\d{3}-\\d{2}-\\d{4}"; //Regex for ###-##-####
+        String text = letter.getText(); //Get letter text
+        Pattern ssnp = Pattern.compile(SSNpattern); //Create regex Pattern
+        Matcher ssnm = ssnp.matcher(text); //Look for matches in the letter
+        if(ssnm.find())
+            letter.setSSN(ssnm.group(0)); //Set SSN to the matched substring
+        //TODO Account Number portion
+
+        return letter;
     }
 }
