@@ -3,19 +3,17 @@ package com.capitalone.creditocr.model.ingest;
 public class LetterData {
 
     //Letter text
-    private String text = "";
+    private String text;
     //Customer's first name
     private String firstName = "";
+    //Customer's middle name or initial
+    private String middle = "";
     //Customer's last name
     private String lastName = "";
     //Date of the letter
     private String letterDate = "";
     //First line of address (Ex: 1234 Main St.)
-    private String addressLine1 = "";
-    //Zipcode of the address
-    private String zipcode = "";
-    //City and State of the address (Ex: Dallas, TX)
-    private String cityState = "";
+    private String streetAddress = "";
     //Customer's 17-digit Capital One account number
     private String acctNum = "";
     //Social Security Number (Ex: 123-45-6789)
@@ -41,6 +39,14 @@ public class LetterData {
         this.firstName = firstName;
     }
 
+    public String getMiddle() {
+        return middle;
+    }
+
+    public void setMiddle(String middle) {
+        this.middle = middle;
+    }
+
     public String getLastName() {
         return lastName;
     }
@@ -57,28 +63,12 @@ public class LetterData {
         this.letterDate = letterDate;
     }
 
-    public String getAddressLine1() {
-        return addressLine1;
+    public String getStreetAddress() {
+        return streetAddress;
     }
 
-    public void setAddressLine1(String addressLine1) {
-        this.addressLine1 = addressLine1;
-    }
-
-    public String getZipcode() {
-        return zipcode;
-    }
-
-    public void setZipcode(String zipcode) {
-        this.zipcode = zipcode;
-    }
-
-    public String getCityState() {
-        return cityState;
-    }
-
-    public void setCityState(String cityState) {
-        this.cityState = cityState;
+    public void setStreetAddress(String streetAddress) {
+        this.streetAddress = streetAddress;
     }
 
     public String getAcctNum() {
