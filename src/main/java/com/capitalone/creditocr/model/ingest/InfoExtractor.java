@@ -173,20 +173,30 @@ public class InfoExtractor {
         //Extract Capital One account number from text
         //Full account number is 17 digits long.
         String AcctNumPat1 = "\\d{17}"; //Full account number
-        String AcctNumPat2 = "number ending in \\d+"; //Number ending in 1234
-        String AcctNumPat3 = "number starting with \\d+"; //Number starting with 1234
+        String AcctNumPat2 = "ending in \\d+"; //Number ending in 1234
+        String AcctNumPat3 = "ends in \\d+"; //Number ending in 1234
+        String AcctNumPat4 = "starting with \\d+"; //Number starting with 1234
+        String AcctNumPat5 = "starts with \\d+"; //Number starting with 1234
         Pattern ANP1 = Pattern.compile(AcctNumPat1);
         Pattern ANP2 = Pattern.compile(AcctNumPat2);
         Pattern ANP3 = Pattern.compile(AcctNumPat3);
+        Pattern ANP4 = Pattern.compile(AcctNumPat4);
+        Pattern ANP5 = Pattern.compile(AcctNumPat5);
         Matcher ANM1 = ANP1.matcher(text);
         Matcher ANM2 = ANP2.matcher(text);
         Matcher ANM3 = ANP3.matcher(text);
+        Matcher ANM4 = ANP4.matcher(text);
+        Matcher ANM5 = ANP5.matcher(text);
         if(ANM1.find())
             letter.setAcctNum(ANM1.group(0)); //AcctNum is full number
         else if(ANM2.find())
             letter.setAcctNum(ANM2.group(0)); //AcctNum matches pattern 2
         else if(ANM3.find())
             letter.setAcctNum(ANM3.group(0)); //AcctNum matches pattern 3
+        else if(ANM4.find())
+            letter.setAcctNum(ANM4.group(0)); //AcctNum matches pattern 4
+        else if(ANM5.find())
+            letter.setAcctNum(ANM5.group(0)); //AcctNum matches pattern 5
         return letter;
     }
 }
