@@ -43,16 +43,17 @@ public class JobProcessor {
     private ExecutorService executor = Executors.newCachedThreadPool();
     private CountDownLatch delegateLatch = new CountDownLatch(1);
 
-
     @Autowired
     public JobProcessor(JobDao jobDao, DocumentImageDao imageDao, ByteIngester ingester, DocumentTextDao textDao) {
         this.imageDao = imageDao;
         this.jobDao = jobDao;
         this.ingester = ingester;
+        this.textDao = textDao;
+
         logger.info("JobProcessor spawning worker thread");
         spawnDelegateThread();
-        this.textDao = textDao;
     }
+
 
     /**
      * Spawn thread that will query the database for new jobs and submit them to the executor service.
