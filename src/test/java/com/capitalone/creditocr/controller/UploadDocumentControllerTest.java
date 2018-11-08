@@ -86,7 +86,7 @@ public class UploadDocumentControllerTest {
             ProcessingJob job = invocation.getArgument(0);
             job.setId(jobCount.incrementAndGet());
             return null;
-        }).when(jobDao).createJob(any(ProcessingJob.class));
+        }).when(jobDao).createImageProcessingJob(any(ProcessingJob.class));
 
         doAnswer(invocation -> {
             DocumentImage image = invocation.getArgument(0);
@@ -118,7 +118,7 @@ public class UploadDocumentControllerTest {
             ProcessingJob job = invocation.getArgument(0);
             job.setId(jobCount.incrementAndGet());
             return null;
-        }).when(jobDao).createJob(any(ProcessingJob.class));
+        }).when(jobDao).createImageProcessingJob(any(ProcessingJob.class));
 
         doAnswer(invocation -> {
             DocumentImage image = invocation.getArgument(0);
@@ -154,7 +154,7 @@ public class UploadDocumentControllerTest {
             ProcessingJob job = invocation.getArgument(0);
             job.setId(jobCount.incrementAndGet());
             return null;
-        }).when(jobDao).createJob(any(ProcessingJob.class));
+        }).when(jobDao).createImageProcessingJob(any(ProcessingJob.class));
 
         doAnswer(invocation -> {
             DocumentImage image = invocation.getArgument(0);

@@ -85,7 +85,12 @@ public class JobProcessor {
                     noOpIterations = 0;
 
                     activeThreadCount.incrementAndGet();
-                    executor.submit(() -> processJob(job.get()));
+                    executor.submit(() -> {
+                        switch (job.get().getJobType()) {
+                            case IMAGE: processImageJob(job.get()); break;
+                            case FINGERPRINT: processDocumentJob(job.get()); break;
+                        }
+                    });
                 }
 
             }
@@ -94,22 +99,19 @@ public class JobProcessor {
         }).start();
     }
 
+    private void processDocumentJob(ProcessingJob job) {
+
+    }
+
     /**
      * Process an image.
      */
-    private void processJob(@NonNull ProcessingJob job) {
+    private void processImageJob(@NonNull ProcessingJob job) {
         logger.debug("Processing job " + job);
         DocumentImage image = getImageFor(job);
         String rawText = ingester.ingest(image.toBufferedImage());
-//        logger.info("text = " + text);
         DocumentText text = new DocumentText(rawText, image.getId());
         textDao.addDocumentText(text);
-
-//        try {
-//            Thread.sleep((random.nextInt(5)+1) * MS_PER_SECOND);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
 
         jobDao.completeJob(job);
         activeThreadCount.decrementAndGet();

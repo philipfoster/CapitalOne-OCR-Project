@@ -2,6 +2,7 @@ package com.capitalone.creditocr.model.dao.postgres_impl;
 
 import com.capitalone.creditocr.controller.job_status.JobStatusEnum;
 import com.capitalone.creditocr.model.dao.JobDao;
+import com.capitalone.creditocr.model.dto.job.JobType;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
 import com.capitalone.creditocr.util.TimeUtils;
 import org.slf4j.Logger;
@@ -31,9 +32,21 @@ public class PgJobDao implements JobDao {
     private static final RowMapper<ProcessingJob> ROW_MAPPER = (rs, rowNum) -> {
         int id = rs.getInt("id");
         Instant created = TimeUtils.date2instant(rs.getDate("created_at"));
-        int imgId = rs.getInt("document_image");
+        JobType jobType = JobType.valueOf(rs.getString("type").toUpperCase());
 
-        return new ProcessingJob(id, created, imgId);
+        switch (jobType) {
+            case IMAGE:
+                var job = ProcessingJob.imageJob(created, rs.getInt("document_image"));
+                job.setId(id);
+                return job;
+            case FINGERPRINT:
+                job = ProcessingJob.documentJob(created, rs.getInt("document_id"));
+                job.setId(id);
+                return job;
+            default:
+                // Should never happen, but it makes the compiler happy...
+                return null;
+        }
     };
 
     private static final RowMapper<Map<String, Date>> DATE_ROW_MAPPER = (rs, rowNum) -> {
@@ -52,11 +65,13 @@ public class PgJobDao implements JobDao {
         this.dataSource = dataSource;
     }
 
+
+
     @Override
-    public void createJob(ProcessingJob job) {
+    public void createImageProcessingJob(ProcessingJob job) {
         // language=sql
-        String sql = "INSERT INTO jobs (created_at, document_image) " +
-                     "     VALUES (:ctime, :image);";
+        String sql = "INSERT INTO jobs (created_at, document_image, type, document_id) " +
+                     "     VALUES (:ctime, :image, 'image'::job_type, null);";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
                 .addValue("ctime", TimeUtils.instant2date(job.getCreationTime()))

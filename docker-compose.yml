@@ -4,7 +4,7 @@ services:
   # Postgres database
   database:
     hostname: postgres
-    image: postgres
+    image: philipfoster/postgres-bytea-ops
     ports:
       - "5432:5432"
     deploy:

@@ -49,12 +49,11 @@ public class PgDocumentTextDao implements DocumentTextDao {
     @Override
     public void addDocumentText(DocumentText documentText) {
         //language=sql
-        String sql = "INSERT INTO document_text (original_text, fingerprint, image_id) " +
-                     "     VALUES (:docText, :fingerprint, :imageId);";
+        String sql = "INSERT INTO document_text (original_text, image_id) " +
+                     "     VALUES (:docText, :imageId);";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
                 .addValue("docText", documentText.getDocumentText())
-                .addValue("fingerprint", documentText.getFingerprint())
                 .addValue("imageId", documentText.getImageId());
 
         NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
