@@ -4,12 +4,6 @@ public class LetterData {
 
     //Letter text
     private String text;
-    //Customer's first name
-    private String firstName = "";
-    //Customer's middle name or initial
-    private String middle = "";
-    //Customer's last name
-    private String lastName = "";
     //Date of the letter
     private String letterDate = "";
     //First line of address (Ex: 1234 Main St.)
@@ -29,30 +23,6 @@ public class LetterData {
 
     public void setText(String text) {
         this.text = text;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getMiddle() {
-        return middle;
-    }
-
-    public void setMiddle(String middle) {
-        this.middle = middle;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
     }
 
     public String getLetterDate() {

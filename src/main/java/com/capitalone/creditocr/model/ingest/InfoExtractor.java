@@ -1,7 +1,16 @@
 package com.capitalone.creditocr.model.ingest;
-import java.util.Vector;
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.namefind.TokenNameFinderModel;
+import opennlp.tools.tokenize.Tokenizer;
+import opennlp.tools.tokenize.TokenizerME;
+import opennlp.tools.tokenize.TokenizerModel;
+import opennlp.tools.util.Span;
+
+import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Vector;
+
 
 public class InfoExtractor {
 
@@ -9,123 +18,35 @@ public class InfoExtractor {
     Method to extract name and address data from the text. These
     two items are grouped due to their frequent proximity to
     each other. This method should get values for firstName,
-    lastName, addressLine1, zipcode, and cityState.
-
-    Normal spaces are used in the Strings were the name should be,
-    instead of the \s statement, as name/address blocks are usually
-    preceded by one or more newlines. This should prevent unwanted
-    words in the name field.
+    lastName, and address.
     */
-    public void extractNameAndAddress(LetterData letter) {
-        String text = letter.getText();
-        /*
-        FirstName LastName
-        1234 Street St
-        City, TX 12345
-        */
-        String pattern1 = "\\w+ \\w+\\s\\d+\\s\\w+\\s\\w+\\s\\w+,\\s\\w{2}\\s\\d{5}";
-        /*
-        FirstName LastName      FirstName LastName
-        1234 Street St          1234 Street Name St
-        City Name, TX 12345     City, TX 12345
-        */
-        String pattern2 = "\\w+ \\w+\\s\\d+\\s\\w+\\s\\w+\\s\\w+\\s\\w+,\\s\\w{2}\\s\\d{5}";
-        /*
-        FirstName LastName      FirstName LastName
-        1234 Street Name St     1234 N Street Name St
-        City Name, TX 12345     City, TX 12345
-        */
-        String pattern3 = "\\w+ \\w+\\s\\d+\\s\\w+\\s\\w+\\s\\w+\\s\\w+\\s\\w+,\\s\\w{2}\\s\\d{5}";
-        /*
-        FirstName LastName
-        1234 N Street Name St
-        City Name, TX 12345
-        */
-        String pattern4 = "\\w+ \\w+\\s\\d+\\s\\w+\\s\\w+\\s\\w+\\s\\w+\\s\\w+\\s\\w+,\\s\\w{2}\\s\\d{5}";
-        /*
-        FirstName Mid LastName
-        1234 Street St
-        City, TX 12345
-        */
-        String pattern5 = "\\w+ \\w+ \\w+\\s\\d+\\s\\w+\\s\\w+\\s\\w+,\\s\\w{2}\\s\\d{5}";
-        /*
-        FirstName Mid LastName  FirstName Mid LastName
-        1234 Street St          1234 Street Name St
-        City Name, TX 12345     City, TX 12345
-        */
-        String pattern6 = "\\w+ \\w+ \\w+\\s\\d+\\s\\w+\\s\\w+\\s\\w+\\s\\w+,\\s\\w{2}\\s\\d{5}";
-        /*
-        FirstName Mid LastName  FirstName Mid LastName
-        1234 Street Name St     1234 N Street Name St
-        City Name, TX 12345     City, TX 12345
-        */
-        String pattern7 = "\\w+ \\w+ \\w+\\s\\d+\\s\\w+\\s\\w+\\s\\w+\\s\\w+\\s\\w+,\\s\\w{2}\\s\\d{5}";
-        /*
-        FirstName Mid LastName
-        1234 N Street Name St
-        City Name, TX 12345
-        */
-        String pattern8 = "\\w+ \\w+ \\w+\\s\\d+\\s\\w+\\s\\w+\\s\\w+\\s\\w+\\s\\w+\\s\\w+,\\s\\w{2}\\s\\d{5}";
-        Pattern p1 = Pattern.compile(pattern1);
-        Pattern p2 = Pattern.compile(pattern2);
-        Pattern p3 = Pattern.compile(pattern3);
-        Pattern p4 = Pattern.compile(pattern4);
-        Pattern p5 = Pattern.compile(pattern5);
-        Pattern p6 = Pattern.compile(pattern6);
-        Pattern p7 = Pattern.compile(pattern7);
-        Pattern p8 = Pattern.compile(pattern8);
-        Matcher m1 = p1.matcher(text);
-        Matcher m2 = p2.matcher(text);
-        Matcher m3 = p3.matcher(text);
-        Matcher m4 = p4.matcher(text);
-        Matcher m5 = p5.matcher(text);
-        Matcher m6 = p6.matcher(text);
-        Matcher m7 = p7.matcher(text);
-        Matcher m8 = p8.matcher(text);
-        String[] arr = new String[4];
-        if(m1.find()) {
-            String result = m1.group(0);
-            arr = result.split("\\s", 3);
+    public LetterData extractAddress(LetterData letter) {
+        try {
+            TokenNameFinderModel nerModel = new TokenNameFinderModel(getClass().getResourceAsStream("/opennlp/en-ner-address.bin"));
+            TokenizerModel tokenizerModel = new TokenizerModel(getClass().getResourceAsStream("/opennlp/en-token.bin"));
+
+            Tokenizer tokenizer = new TokenizerME(tokenizerModel);
+            NameFinderME addressFinder = new NameFinderME(nerModel);
+
+            String[] tokens = tokenizer.tokenize(letter.getText());
+            Span[] nameSpans = addressFinder.find(tokens);
+            String[] addresses = Span.spansToStrings(nameSpans, tokens);
+            Vector<String> addressVec = new Vector<>();
+            for (String address : addresses) {
+                if (!address.contains("Capital One"))
+                    addressVec.add(address);
+            }
+            /*
+            If there is at least 1 address left in addresses, assume
+            the first address is the correct address and assign it to
+            streetAddress. If there are no addresses left, do nothing.
+            */
+            if(addressVec.size() >= 1)
+                letter.setStreetAddress(addressVec.get(0));
+        } catch (IOException ex) {
+            //TODO handle exception
         }
-        else if(m2.find()) {
-            String result = m2.group(0);
-            arr = result.split("\\s", 3);
-        }
-        else if(m3.find()) {
-            String result = m3.group(0);
-            arr = result.split("\\s", 3);
-        }
-        else if(m4.find()) {
-            String result = m4.group(0);
-            arr = result.split("\\s", 3);
-        }
-        else if(m5.find()) {
-            String result = m5.group(0);
-            arr = result.split("\\s", 4);
-        }
-        else if(m6.find()) {
-            String result = m6.group(0);
-            arr = result.split("\\s", 4);
-        }
-        else if(m7.find()) {
-            String result = m7.group(0);
-            arr = result.split("\\s", 4);
-        }
-        else if(m8.find()) {
-            String result = m8.group(0);
-            arr = result.split("\\s", 4);
-        }
-        if (arr.length == 3) {
-            letter.setFirstName(arr[0]);
-            letter.setLastName(arr[1]);
-            letter.setStreetAddress(arr[2]);
-        }
-        else if(arr.length == 4) {
-            letter.setFirstName(arr[0]);
-            letter.setMiddle(arr[1]);
-            letter.setLastName(arr[2]);
-            letter.setStreetAddress(arr[3]);
-        }
+        return letter;
     }
 
     /*
