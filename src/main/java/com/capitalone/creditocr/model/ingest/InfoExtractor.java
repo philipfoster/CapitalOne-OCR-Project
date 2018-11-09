@@ -7,6 +7,7 @@ import opennlp.tools.tokenize.TokenizerModel;
 import opennlp.tools.util.Span;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Vector;
@@ -22,8 +23,8 @@ public class InfoExtractor {
     */
     public LetterData extractAddress(LetterData letter) {
         try {
-            TokenNameFinderModel nerModel = new TokenNameFinderModel(getClass().getResourceAsStream("/opennlp/en-ner-address.bin"));
-            TokenizerModel tokenizerModel = new TokenizerModel(getClass().getResourceAsStream("/opennlp/en-token.bin"));
+            TokenNameFinderModel nerModel = new TokenNameFinderModel(getClass().getResourceAsStream("/resources/static/opennlp/en-ner-address.bin"));
+            TokenizerModel tokenizerModel = new TokenizerModel(getClass().getResourceAsStream("/resources/static/opennlp/en-token.bin"));
 
             Tokenizer tokenizer = new TokenizerME(tokenizerModel);
             NameFinderME addressFinder = new NameFinderME(nerModel);
@@ -45,8 +46,10 @@ public class InfoExtractor {
                 letter.setStreetAddress(addressVec.get(0));
         } catch (IOException ex) {
             //TODO handle exception
+        } finally {
+
+            return letter;
         }
-        return letter;
     }
 
     /*
