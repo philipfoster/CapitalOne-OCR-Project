@@ -62,11 +62,10 @@ public class JobProcessor {
         new Thread(() -> {
             int noOpIterations = 0;
             while (!stopFlag) {
-                boolean tooManyThreads;
 
                 // This method may allow slightly more than JOB_QUEUE_SIZE threads to be created, but it should be
                 // small enough that it does not matter.
-                tooManyThreads = activeThreadCount.get() >= JOB_QUEUE_SIZE;
+                var tooManyThreads = activeThreadCount.get() >= JOB_QUEUE_SIZE;
 
                 // TODO: If this grows too big (more than some config value) trigger a warning.
                 if (tooManyThreads) {
@@ -102,6 +101,9 @@ public class JobProcessor {
 
     private void processDocumentJob(ProcessingJob job) {
 
+
+        jobDao.completeJob(job);
+        activeThreadCount.decrementAndGet();
     }
 
     /**

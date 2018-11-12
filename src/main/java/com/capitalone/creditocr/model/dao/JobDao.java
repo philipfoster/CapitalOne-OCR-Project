@@ -19,6 +19,13 @@ public interface JobDao {
     void createImageProcessingJob(ProcessingJob job);
 
     /**
+     * Create a document processing job.
+     * @param job the job to create
+     * @param dependencies A list of job IDs which the inserted job depends on
+     */
+    void createDocumentProcessingJob(ProcessingJob job, List<Integer> dependencies);
+
+    /**
      * Get all available jobs
      * @param pageSize The number of elements to return
      * @param pageNum The page number to start at.

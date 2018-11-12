@@ -2,6 +2,8 @@
 
 begin transaction;
 
+truncate table addresses, document, document_text, document_images, document_queue_relation, job_assignments, jobs, queues;
+
 -- Add hooks into custom db extension\
 DROP FUNCTION IF EXISTS bytea_xor(bytea, bytea);
 CREATE FUNCTION bytea_xor(bytea, bytea) RETURNS bytea
@@ -55,5 +57,14 @@ end $$;
 
 
 ALTER TABLE public.jobs ALTER COLUMN document_image DROP NOT NULL;
+
+-- Add table to represent job dependencies
+CREATE TABLE IF NOT EXISTS public.job_dependency
+(
+  job int NOT NULL,
+  dependency int NOT NULL,
+  CONSTRAINT job_dependency_jobs_id_fk FOREIGN KEY (job) REFERENCES public.jobs (id),
+  CONSTRAINT job_dependency_dependency_id_fk FOREIGN KEY (dependency) REFERENCES public.jobs (id)
+);
 
 end transaction;

@@ -149,7 +149,8 @@ public class UploadDocumentController {
     /**
      * Handle the files in the root of the uploaded .zip directory.
      */
-    private List<DocumentResponse> storeIndividualFiles(List<Path> files) {
+    @Transactional
+    List<DocumentResponse> storeIndividualFiles(List<Path> files) {
         List<DocumentResponse> list = new ArrayList<>();
         for (Path path : files) {
             if (path.toFile().isDirectory()) {
@@ -168,6 +169,10 @@ public class UploadDocumentController {
             }
             int jobId = storeImage(content, ImageType.PNG, 0, document);
             DocumentResponse resp = new DocumentResponse(document.getId(), Collections.singletonList(jobId));
+
+            ProcessingJob documentJob = ProcessingJob.documentJob(Instant.now(), document.getId());
+            jobDao.createDocumentProcessingJob(documentJob, Collections.singletonList(jobId));
+
             list.add(resp);
         }
 
@@ -204,6 +209,9 @@ public class UploadDocumentController {
                 }
             }
         }
+
+        ProcessingJob job = ProcessingJob.documentJob(Instant.now(), document.getId());
+        jobDao.createDocumentProcessingJob(job, jobIds);
 
         return new DocumentResponse(document.getId(), jobIds);
     }
