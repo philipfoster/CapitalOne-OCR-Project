@@ -18,4 +18,7 @@ ENV TESSDATA_PREFIX=/tessdata
 
 COPY ${JAR_FILE} app.jar
 
-ENTRYPOINT ["/jdk-11/bin/java","-Djava.security.egd=file:/dev/./urandom","-jar","app.jar"]
+# Expose debugging port (temporary for development)
+# Remote debugging arguments. Remove before releasing
+# -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+ENTRYPOINT ["/jdk-11/bin/java","-Djava.security.egd=file:/dev/./urandom", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-jar","app.jar"]
