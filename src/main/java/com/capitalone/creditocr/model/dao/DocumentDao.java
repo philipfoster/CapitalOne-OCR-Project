@@ -2,6 +2,9 @@ package com.capitalone.creditocr.model.dao;
 
 import com.capitalone.creditocr.model.dto.document.Document;
 
+import java.util.List;
+import java.util.Optional;
+
 
 public interface DocumentDao {
 
@@ -14,4 +17,20 @@ public interface DocumentDao {
 
     int getDocumentIDbyJob(int id);
 
+    /**
+     * Get a document by the document id
+     * @param id the id
+     * @return the document
+     */
+    Optional<Document> getDocumentById(int id);
+
+    /**
+     * List document IDs which are substantially similar to a document given a simhash fingerprint
+     * @param fingerprint The simhash fingerprint of the document to compare
+     * @param sensitivity The minimum percent similarity between the given hash and the hash of a document to include in the result set. Range = [0, 1], inclusive
+     * @return The set of document IDs which are similar to the given fingerprint
+     */
+    List<Integer> getSimilarDocumentIds(byte[] fingerprint, float sensitivity);
+
+    void updateDocument(Document document);
 }

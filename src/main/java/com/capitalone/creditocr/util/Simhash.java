@@ -2,7 +2,6 @@ package com.capitalone.creditocr.util;
 
 import org.springframework.util.DigestUtils;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +15,7 @@ public class Simhash {
      * @param str The string
      * @return The hash digest
      */
-    public static BigInteger hash(String str) {
+    public static byte[] hash(String str) {
         // MD5 has 16 bytes = 128 bits. The n'th dimension in the vector represents the n'th bit.
         int[] weightVector = new int[128];
 
@@ -52,16 +51,16 @@ public class Simhash {
             }
         }
 
-        StringBuilder out = new StringBuilder(128);
-        for (int i : weightVector) {
-            if (i > 0) {
-                out.append('1');
-            } else {
-                out.append('0');
-            }
-        }
-
-        return new BigInteger(out.toString(), 2);
+        return result;
+//        StringBuilder out = new StringBuilder(128);
+//        for (int i : weightVector) {
+//            if (i > 0) {
+//                out.append('1');
+//            } else {
+//                out.append('0');
+//            }
+//        }
+//        return new BigInteger(out.toString(), 2);
     }
 
     private static String[] ngram(String str, int n) {

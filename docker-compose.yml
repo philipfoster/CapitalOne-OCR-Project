@@ -4,7 +4,7 @@ services:
   # Postgres database
   database:
     hostname: postgres
-    image: postgres
+    image: philipfoster/postgres-bytea-ops
     ports:
       - "5432:5432"
     deploy:
@@ -26,6 +26,7 @@ services:
     image: credit-ocr
     ports:
       - "8080:8080"
+      - "5005:5005" # Remote debug port
     depends_on:
       - database
     deploy:

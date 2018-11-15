@@ -10,7 +10,7 @@ public class DocumentBuilder {
     private Instant postmarkDate;
     private int numSimilarDocuments;
     private int addressId;
-    private int textId;
+    private byte[] fingerprint;
 
     public DocumentBuilder setAccountNumber(long accountNumber) {
         this.accountNumber = accountNumber;
@@ -47,12 +47,12 @@ public class DocumentBuilder {
         return this;
     }
 
-    public DocumentBuilder setTextId(int textId) {
-        this.textId = textId;
+    public DocumentBuilder setFingerprint(byte[] fingerprint) {
+        this.fingerprint = fingerprint;
         return this;
     }
 
     public Document build() {
-        return new Document(accountNumber, ssn, letterDate, dateOfBirth, postmarkDate, numSimilarDocuments, addressId, textId);
+        return new Document(accountNumber, ssn, letterDate, dateOfBirth, postmarkDate, numSimilarDocuments, addressId, fingerprint);
     }
 }

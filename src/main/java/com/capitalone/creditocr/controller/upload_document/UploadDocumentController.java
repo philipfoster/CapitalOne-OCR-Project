@@ -92,9 +92,7 @@ public class UploadDocumentController {
         } else {
             // Add a blank row into the db as a placeholder. This also lets us get an auto-generated primary key for
             // referencing by other tables.
-            Document document = Document.builder()
-                    .build();
-            documentDao.createDocument(document);
+            Document document = makeDocumentEntry();
 
             int jobId = storeImage(fileContent, ImageType.fromContentType(contentType), 0, document);
             DocumentResponse response = new DocumentResponse(document.getId(), Collections.singletonList(jobId));
@@ -151,15 +149,15 @@ public class UploadDocumentController {
     /**
      * Handle the files in the root of the uploaded .zip directory.
      */
-    private List<DocumentResponse> storeIndividualFiles(List<Path> files) {
+    @Transactional
+    List<DocumentResponse> storeIndividualFiles(List<Path> files) {
         List<DocumentResponse> list = new ArrayList<>();
         for (Path path : files) {
             if (path.toFile().isDirectory()) {
                 // Don't try to ingest a directory. This will be handled by a later iteration
                 continue;
             }
-            Document document = Document.builder().build();
-            documentDao.createDocument(document);
+            Document document = makeDocumentEntry();
 
             byte[] content;
             try {
@@ -171,15 +169,24 @@ public class UploadDocumentController {
             }
             int jobId = storeImage(content, ImageType.PNG, 0, document);
             DocumentResponse resp = new DocumentResponse(document.getId(), Collections.singletonList(jobId));
+
+            ProcessingJob documentJob = ProcessingJob.documentJob(Instant.now(), document.getId());
+            jobDao.createDocumentProcessingJob(documentJob, Collections.singletonList(jobId));
+
             list.add(resp);
         }
 
         return list;
     }
 
-    private DocumentResponse storeGroupedFiles(List<Path> files) throws IOException {
+    private Document makeDocumentEntry() {
         Document document = Document.builder().build();
         documentDao.createDocument(document);
+        return document;
+    }
+
+    private DocumentResponse storeGroupedFiles(List<Path> files) throws IOException {
+        Document document = makeDocumentEntry();
 
         List<Integer> jobIds = new ArrayList<>();
         for (Path file : files) {
@@ -202,6 +209,9 @@ public class UploadDocumentController {
                 }
             }
         }
+
+        ProcessingJob job = ProcessingJob.documentJob(Instant.now(), document.getId());
+        jobDao.createDocumentProcessingJob(job, jobIds);
 
         return new DocumentResponse(document.getId(), jobIds);
     }
@@ -227,8 +237,8 @@ public class UploadDocumentController {
         imageDao.addNewImage(documentImage);
 
         // Create processing job intent
-        ProcessingJob intent = new ProcessingJob(Instant.now(), documentImage.getId());
-        jobDao.createJob(intent);
+        ProcessingJob intent = ProcessingJob.imageJob(Instant.now(), documentImage.getId());
+        jobDao.createImageProcessingJob(intent);
 
         return intent.getId();
     }

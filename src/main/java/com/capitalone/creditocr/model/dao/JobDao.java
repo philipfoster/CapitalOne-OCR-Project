@@ -16,7 +16,14 @@ public interface JobDao {
      * Insert a job intent into the jobs table. The {@link ProcessingJob#id} field will
      * be updated with the auto-generated primary key after insertion.
      */
-    void createJob(ProcessingJob job);
+    void createImageProcessingJob(ProcessingJob job);
+
+    /**
+     * Create a document processing job.
+     * @param job the job to create
+     * @param dependencies A list of job IDs which the inserted job depends on
+     */
+    void createDocumentProcessingJob(ProcessingJob job, List<Integer> dependencies);
 
     /**
      * Get all available jobs

@@ -20,4 +20,11 @@ public interface DocumentTextDao {
      */
     void addDocumentText(DocumentText documentText);
 
+    /**
+     * Load text for a document
+     * @param documentId the ID of the document to load
+     * @return The text
+     */
+    String getFullDocumentText(int documentId);
+
 }
