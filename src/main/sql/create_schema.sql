@@ -16,60 +16,18 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: postgres; Type: DATABASE; Schema: -; Owner: ocr
+-- Name: image_type; Type: TYPE; Schema: public; Owner: ocr
 --
 
-CREATE DATABASE postgres WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'en_US.utf8' LC_CTYPE = 'en_US.utf8';
+CREATE TYPE public.image_type AS ENUM (
+    'JPEG',
+    'PDF',
+    'PNG',
+    'TIFF'
+);
 
 
-ALTER DATABASE postgres OWNER TO ocr;
-
-\connect postgres
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- Name: DATABASE postgres; Type: COMMENT; Schema: -; Owner: ocr
---
-
-COMMENT ON DATABASE postgres IS 'default administrative connection database';
-
-
---
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
-
---
--- Name: pg_trgm; Type: EXTENSION; Schema: -; Owner: 
---
-
-CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
-
-
---
--- Name: EXTENSION pg_trgm; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching based on trigrams';
-
+ALTER TYPE public.image_type OWNER TO ocr;
 
 --
 -- Name: compare_simhash(bit, bit); Type: FUNCTION; Schema: public; Owner: ocr
@@ -191,8 +149,7 @@ CREATE TABLE public.document (
     postmark_date date,
     date_of_birth date,
     num_similar_documents integer DEFAULT 0 NOT NULL,
-    address integer,
-    text_id integer NOT NULL
+    address integer
 );
 
 
@@ -242,71 +199,16 @@ ALTER SEQUENCE public.document_id_seq OWNED BY public.document.id;
 
 
 --
--- Name: document_image_relation; Type: TABLE; Schema: public; Owner: ocr
---
-
-CREATE TABLE public.document_image_relation (
-    document_id integer NOT NULL,
-    image_id integer NOT NULL
-);
-
-
-ALTER TABLE public.document_image_relation OWNER TO ocr;
-
---
--- Name: document_image_relation_document_id_seq; Type: SEQUENCE; Schema: public; Owner: ocr
---
-
-CREATE SEQUENCE public.document_image_relation_document_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.document_image_relation_document_id_seq OWNER TO ocr;
-
---
--- Name: document_image_relation_document_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ocr
---
-
-ALTER SEQUENCE public.document_image_relation_document_id_seq OWNED BY public.document_image_relation.document_id;
-
-
---
--- Name: document_image_relation_image_id_seq; Type: SEQUENCE; Schema: public; Owner: ocr
---
-
-CREATE SEQUENCE public.document_image_relation_image_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.document_image_relation_image_id_seq OWNER TO ocr;
-
---
--- Name: document_image_relation_image_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ocr
---
-
-ALTER SEQUENCE public.document_image_relation_image_id_seq OWNED BY public.document_image_relation.image_id;
-
-
---
 -- Name: document_images; Type: TABLE; Schema: public; Owner: ocr
 --
 
 CREATE TABLE public.document_images (
     id integer NOT NULL,
     file_data bytea NOT NULL,
-    file_name text NOT NULL,
     page_number integer,
-    is_envelope boolean DEFAULT false NOT NULL
+    is_envelope boolean DEFAULT false NOT NULL,
+    image_format public.image_type NOT NULL,
+    document_id integer
 );
 
 
@@ -412,7 +314,8 @@ CREATE TABLE public.document_text (
     id integer NOT NULL,
     original_text text NOT NULL,
     vectorized_text tsvector NOT NULL,
-    fingerprint bytea
+    fingerprint bytea,
+    image_id integer NOT NULL
 );
 
 
@@ -445,28 +348,6 @@ ALTER TABLE public.document_text_id_seq OWNER TO ocr;
 --
 
 ALTER SEQUENCE public.document_text_id_seq OWNED BY public.document_text.id;
-
-
---
--- Name: document_text_id_seq1; Type: SEQUENCE; Schema: public; Owner: ocr
---
-
-CREATE SEQUENCE public.document_text_id_seq1
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.document_text_id_seq1 OWNER TO ocr;
-
---
--- Name: document_text_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: ocr
---
-
-ALTER SEQUENCE public.document_text_id_seq1 OWNED BY public.document.text_id;
 
 
 --
@@ -611,27 +492,6 @@ ALTER TABLE ONLY public.document ALTER COLUMN id SET DEFAULT nextval('public.doc
 
 
 --
--- Name: document text_id; Type: DEFAULT; Schema: public; Owner: ocr
---
-
-ALTER TABLE ONLY public.document ALTER COLUMN text_id SET DEFAULT nextval('public.document_text_id_seq1'::regclass);
-
-
---
--- Name: document_image_relation document_id; Type: DEFAULT; Schema: public; Owner: ocr
---
-
-ALTER TABLE ONLY public.document_image_relation ALTER COLUMN document_id SET DEFAULT nextval('public.document_image_relation_document_id_seq'::regclass);
-
-
---
--- Name: document_image_relation image_id; Type: DEFAULT; Schema: public; Owner: ocr
---
-
-ALTER TABLE ONLY public.document_image_relation ALTER COLUMN image_id SET DEFAULT nextval('public.document_image_relation_image_id_seq'::regclass);
-
-
---
 -- Name: document_images id; Type: DEFAULT; Schema: public; Owner: ocr
 --
 
@@ -700,12 +560,6 @@ ALTER TABLE ONLY public.queues ALTER COLUMN id SET DEFAULT nextval('public.queue
 
 
 --
--- Data for Name: document_image_relation; Type: TABLE DATA; Schema: public; Owner: ocr
---
-
-
-
---
 -- Data for Name: document_images; Type: TABLE DATA; Schema: public; Owner: ocr
 --
 
@@ -756,20 +610,6 @@ SELECT pg_catalog.setval('public.document_id_seq', 1, false);
 
 
 --
--- Name: document_image_relation_document_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ocr
---
-
-SELECT pg_catalog.setval('public.document_image_relation_document_id_seq', 1, false);
-
-
---
--- Name: document_image_relation_image_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ocr
---
-
-SELECT pg_catalog.setval('public.document_image_relation_image_id_seq', 1, false);
-
-
---
 -- Name: document_images_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ocr
 --
 
@@ -795,13 +635,6 @@ SELECT pg_catalog.setval('public.document_queue_relation_queue_id_seq', 1, false
 --
 
 SELECT pg_catalog.setval('public.document_text_id_seq', 1, false);
-
-
---
--- Name: document_text_id_seq1; Type: SEQUENCE SET; Schema: public; Owner: ocr
---
-
-SELECT pg_catalog.setval('public.document_text_id_seq1', 1, false);
 
 
 --
@@ -838,14 +671,6 @@ SELECT pg_catalog.setval('public.queues_id_seq', 1, false);
 
 ALTER TABLE ONLY public.addresses
     ADD CONSTRAINT addresses_pkey PRIMARY KEY (id);
-
-
---
--- Name: document_image_relation document_image_relation_pk; Type: CONSTRAINT; Schema: public; Owner: ocr
---
-
-ALTER TABLE ONLY public.document_image_relation
-    ADD CONSTRAINT document_image_relation_pk PRIMARY KEY (document_id, image_id);
 
 
 --
@@ -933,27 +758,11 @@ ALTER TABLE ONLY public.document
 
 
 --
--- Name: document document_document_text_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: ocr
+-- Name: document_images document_images_document_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: ocr
 --
 
-ALTER TABLE ONLY public.document
-    ADD CONSTRAINT document_document_text_id_fk FOREIGN KEY (text_id) REFERENCES public.document_text(id);
-
-
---
--- Name: document_image_relation document_image_relation_document_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: ocr
---
-
-ALTER TABLE ONLY public.document_image_relation
-    ADD CONSTRAINT document_image_relation_document_id_fk FOREIGN KEY (document_id) REFERENCES public.document(id);
-
-
---
--- Name: document_image_relation document_image_relation_document_images_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: ocr
---
-
-ALTER TABLE ONLY public.document_image_relation
-    ADD CONSTRAINT document_image_relation_document_images_id_fk FOREIGN KEY (image_id) REFERENCES public.document_images(id);
+ALTER TABLE ONLY public.document_images
+    ADD CONSTRAINT document_images_document_id_fk FOREIGN KEY (document_id) REFERENCES public.document(id);
 
 
 --
@@ -970,6 +779,14 @@ ALTER TABLE ONLY public.document_queue_relation
 
 ALTER TABLE ONLY public.document_queue_relation
     ADD CONSTRAINT document_queue_relation_queues_id_fk FOREIGN KEY (queue_id) REFERENCES public.queues(id);
+
+
+--
+-- Name: document_text document_text_document_images_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: ocr
+--
+
+ALTER TABLE ONLY public.document_text
+    ADD CONSTRAINT document_text_document_images_id_fk FOREIGN KEY (image_id) REFERENCES public.document_images(id);
 
 
 --

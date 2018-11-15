@@ -26,4 +26,7 @@ public class HelloWorldController {
         return "Hello World!";
     }
 
+    @GetMapping("/andrew")
+    public String andrewProcess() {
+        return "Andrew is " + Integer.toString(random.nextInt(100)) + " years old!";}
 }

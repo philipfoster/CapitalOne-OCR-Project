@@ -4,7 +4,7 @@ services:
   # Postgres database
   database:
     hostname: postgres
-    image: postgres
+    image: philipfoster/postgres-bytea-ops
     ports:
       - "5432:5432"
     deploy:
@@ -19,7 +19,6 @@ services:
       # These are for development only, so it's ok that the password is insecure
       - POSTGRES_PASSWORD=ocr
       - POSTGRES_USER=ocr
-      - POSTRES_DB=ocr-project
       - DB_HOST=postgresql
 
   # API server (our code)
@@ -27,6 +26,7 @@ services:
     image: credit-ocr
     ports:
       - "8080:8080"
+      - "5005:5005" # Remote debug port
     depends_on:
       - database
     deploy:
@@ -39,7 +39,7 @@ services:
     environment:
       - spring.datasource.username=ocr
       - spring.datasource.password=ocr
-      - spring.datasource.url=jdbc:postgresql://postgres:5432/ocr-project
+      - spring.datasource.url=jdbc:postgresql://postgres:5432/postgres
 
 
 

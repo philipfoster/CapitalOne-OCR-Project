@@ -44,7 +44,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Job'
+                  $ref: '#/components/schemas/DocumentUploadResponse'
         415:
           description: Client attempted to upload an unsupported file type
           content:
@@ -304,7 +304,27 @@ components:
             "status": "completed"
             document: "4321"
         }
-    
+    DocumentUploadResponse:
+      description: This object contains IDs for an uploaded document, and associated job ids for pages in the document
+      required:
+      - documentId
+      - jobIds
+      type: object
+      properties:
+       documentId:
+         format: integer
+         description: the id of the uploaded document
+       jobIds:
+         format: integer
+         type: array
+      example: |-
+        {
+            "documentId": 72,
+            "jobIds": [
+                60,
+                61
+            ]
+        }
     Error:
       description: 'This object is returned when an error (non-2xx response codde)
         occurs. '
