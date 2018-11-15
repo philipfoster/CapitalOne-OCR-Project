@@ -23,7 +23,7 @@ public class PgDocumentTextDao implements DocumentTextDao {
     private static final RowMapper<Join2<Integer, DocumentText>> DOCUMENT_PAGE_MAPPER = ((resultSet, rowNum) -> {
         var text = new DocumentText(
                 resultSet.getString("original_text"),
-                resultSet.getInt("image_id")
+        resultSet.getInt("image_id")
         );
 
         text.setId(resultSet.getInt("id"));
@@ -44,8 +44,8 @@ public class PgDocumentTextDao implements DocumentTextDao {
     public Optional<String> getDocumentTextById(int id) {
         //language=sql
         String sql = "SELECT original_text AS text FROM document_text, document_images " +
-                     " WHERE document_text.image_id = images.id " +
-                     "   AND document_images.document_id = :docId;";
+                " WHERE document_text.image_id = images.id " +
+                "   AND document_images.document_id = :docId;";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
                 .addValue("docId",  id);
@@ -87,7 +87,7 @@ public class PgDocumentTextDao implements DocumentTextDao {
                      " FROM document_text " +
                      " JOIN document_images images on document_text.image_id = images.id" +
                      " WHERE images.document_id = :docId " +
-                     "  AND NOT page_number < 1";
+                     "  AND NOT images.is_envelope";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
                 .addValue("docId", documentId);

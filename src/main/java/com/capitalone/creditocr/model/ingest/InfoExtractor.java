@@ -1,18 +1,19 @@
 package com.capitalone.creditocr.model.ingest;
+
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
 import opennlp.tools.tokenize.Tokenizer;
 import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 import opennlp.tools.util.Span;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.logging.Logger;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Vector;
 
-
+@Service
 public class InfoExtractor {
 
     /*

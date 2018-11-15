@@ -1,12 +1,16 @@
 package com.capitalone.creditocr.model.ingest;
 
 import com.capitalone.creditocr.conf.InstanceConfig;
+import com.capitalone.creditocr.model.dao.DocumentDao;
 import com.capitalone.creditocr.model.dao.DocumentImageDao;
 import com.capitalone.creditocr.model.dao.DocumentTextDao;
 import com.capitalone.creditocr.model.dao.JobDao;
+import com.capitalone.creditocr.model.dto.document.Document;
 import com.capitalone.creditocr.model.dto.document.DocumentText;
 import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
+import com.capitalone.creditocr.util.Simhash;
+import com.capitalone.creditocr.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +18,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -31,11 +36,14 @@ public class JobProcessor {
     private static final int JOB_QUEUE_SIZE = 4;
     private static final long MS_PER_SECOND = 1000L;
     private static final int MAX_TIMEOUT = 5;
+    private static final float SIMILARITY_THRESHOLD = .6f;
 
     private final ByteIngester ingester;
     private final JobDao jobDao;
     private final DocumentImageDao imageDao;
     private final DocumentTextDao textDao;
+    private final DocumentDao documentDao;
+    private final InfoExtractor infoExtractor;
 
     private volatile boolean stopFlag = false;
 
@@ -44,11 +52,14 @@ public class JobProcessor {
     private CountDownLatch delegateLatch = new CountDownLatch(1);
 
     @Autowired
-    public JobProcessor(JobDao jobDao, DocumentImageDao imageDao, ByteIngester ingester, DocumentTextDao textDao) {
+    public JobProcessor(JobDao jobDao, DocumentImageDao imageDao, ByteIngester ingester, DocumentTextDao textDao,
+                        DocumentDao documentDao, InfoExtractor infoExtractor) {
         this.imageDao = imageDao;
         this.jobDao = jobDao;
         this.ingester = ingester;
         this.textDao = textDao;
+        this.documentDao = documentDao;
+        this.infoExtractor = infoExtractor;
 
         logger.info("JobProcessor spawning worker thread");
         spawnDelegateThread();
@@ -85,10 +96,25 @@ public class JobProcessor {
                     noOpIterations = 0;
 
                     activeThreadCount.incrementAndGet();
+
+                    // This is getting into god object territory
+                    // TODO: Refactor this into worker class and move specific processing logic to that class
                     executor.submit(() -> {
-                        switch (job.get().getJobType()) {
-                            case IMAGE: processImageJob(job.get()); break;
-                            case FINGERPRINT: processDocumentJob(job.get()); break;
+                        try {
+                            switch (job.get().getJobType()) {
+                                case IMAGE:
+                                    processImageJob(job.get());
+                                    break;
+                                case FINGERPRINT:
+                                    processDocumentJob(job.get());
+                                    break;
+                            }
+                            jobDao.completeJob(job.get());
+                        } catch (Exception e) {
+                            logger.error("Job task failed. details: " + job, e);
+                            // TODO: Mark job as error
+                        } finally {
+                            activeThreadCount.decrementAndGet();
                         }
                     });
                 }
@@ -99,11 +125,57 @@ public class JobProcessor {
         }).start();
     }
 
+    /**
+     * Process a document
+     */
     private void processDocumentJob(ProcessingJob job) {
 
+        // Need to:
+        // 1. Generate fingerprint
+        // 2. Count similar documents
+        // 2. Extract data
+        // 3. Sort into queue
+        Objects.requireNonNull(job.getDocumentFk());
+        Optional<Document> documentOptional= documentDao.getDocumentById(job.getDocumentFk());
+        Document document;
 
-        jobDao.completeJob(job);
-        activeThreadCount.decrementAndGet();
+        if (documentOptional.isPresent()) {
+            document = documentOptional.get();
+        } else {
+            // This should never happen.
+            // TODO: Investigate how to mark a job as failed
+            logger.error(String.format("Could not process job %s. document does not exist...", job));
+            return;
+        }
+
+        String fullText = textDao.getFullDocumentText(job.getDocumentFk());
+
+        // Generate fingerprint and count similar documents
+        byte[] fingerprint = Simhash.hash(fullText);
+        document.setFingerprint(fingerprint);
+        int numSimilarDocuments = documentDao.getSimilarDocumentIds(fingerprint, SIMILARITY_THRESHOLD).size();
+        document.setNumSimilarDocuments(numSimilarDocuments);
+
+        // Extract customer information from letters
+        var letterData = new LetterData(fullText);
+        infoExtractor.extractDate(letterData);
+        infoExtractor.extractNumbers(letterData);
+        infoExtractor.extractAddress(letterData);
+
+        String ssn = letterData.getSSN();
+        document.setSsn(((ssn == null) || ssn.isEmpty()) ? null : ssn);
+        try {
+            document.setAccountNumber(Long.parseLong(letterData.getAcctNum()));
+        } catch (NumberFormatException e) {
+            // At the moment, the database isn't set up to handle partial numbers...
+            logger.debug("Got partial account number.", e);
+        }
+        document.setLetterDate(TimeUtils.string2Instant(letterData.getLetterDate()));
+
+        // Save document to database
+        documentDao.updateDocument(document);
+
+        // TODO: sort into queue
     }
 
     /**
@@ -115,9 +187,6 @@ public class JobProcessor {
         String rawText = ingester.ingest(image.toBufferedImage());
         DocumentText text = new DocumentText(rawText, image.getId());
         textDao.addDocumentText(text);
-
-        jobDao.completeJob(job);
-        activeThreadCount.decrementAndGet();
     }
 
     /**
