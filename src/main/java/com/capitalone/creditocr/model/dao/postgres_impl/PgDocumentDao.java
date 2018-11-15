@@ -61,11 +61,11 @@ public class PgDocumentDao implements DocumentDao {
         // TODO: insert address if non-null
 
         MapSqlParameterSource source = new MapSqlParameterSource()
-                .addValue("acctNo", document.getAccountNumber() > 0 ? document.getAccountNumber() : null)
-                .addValue("ssn", document.getSsn())
-                .addValue("ldate", instant2SqlDate(document.getLetterDate()))
-                .addValue("pdate", instant2SqlDate(document.getPostmarkDate()))
-                .addValue("dob", instant2SqlDate(document.getDateOfBirth()));
+                .addValue("acctNo", ((document == null) || (document.getAccountNumber() <= 0)) ? null : document.getAccountNumber())
+                .addValue("ssn", document != null ? document.getSsn() : null)
+                .addValue("ldate", instant2SqlDate(document != null ? document.getLetterDate() : null))
+                .addValue("pdate", instant2SqlDate(document != null ? document.getPostmarkDate() : null))
+                .addValue("dob", instant2SqlDate(document != null ? document.getDateOfBirth() : null));
 
         NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
         KeyHolder holder = new GeneratedKeyHolder();
@@ -115,9 +115,8 @@ public class PgDocumentDao implements DocumentDao {
     @Override
     public List<Integer> getSimilarDocumentIds(byte[] fingerprint, float sensitivity) {
         //language=sql
-        String sql = " select document_images.document_id id" +
-                     " from document_images " +
-                     " join document on document_images.document_id = document.id " +
+        String sql = " select id" +
+                     " from document " +
                      " where document.fingerprint is not null " +
                      " and 1-(bytea_bitsset(bytea_xor(:fingerprint, document.fingerprint))/128::float) > :sensitivity;";
 
