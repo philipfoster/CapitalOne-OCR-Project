@@ -1,6 +1,7 @@
 package com.capitalone.creditocr.model.dao;
 
 import com.capitalone.creditocr.model.dto.document.Document;
+import com.capitalone.creditocr.model.dto.document.PostalAddress;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,4 +34,11 @@ public interface DocumentDao {
     List<Integer> getSimilarDocumentIds(byte[] fingerprint, float sensitivity);
 
     void updateDocument(Document document);
+
+    /**
+     * Set address for document
+     * @param documentId the document id to attach the address to
+     * @param address the address
+     */
+    void setAddress(int documentId, PostalAddress address);
 }
