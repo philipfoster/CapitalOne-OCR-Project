@@ -101,7 +101,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-    put:
+    patch:
       operationId: updateDocumentMetadata
       summary: Update document metadata
       description: Update metadata about a document. Any field specified in the body will overwrite the existing data. 
@@ -134,16 +134,12 @@ paths:
                   $ref: '#/components/schemas/Date'
                 postmarkDate:
                   $ref: '#/components/schemas/Date'
-                addQueues:
-                  description: "A list of queues to add this document to"
-                  type: array
-                  items:
-                    type: string 
-                removeQueues:
-                  description: "A list of queues to remove this document from"
-                  type: array
-                  items:
-                    type: string 
+                disputeQueue:
+                  description: "The dispute queue to assign the document to."
+                  type: string
+                  oneOf:
+                    - $ref: '#/components/schemas/DisputeQueue'
+
       responses:
         200:
           description: OK
@@ -224,7 +220,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'          
+                $ref: '#/components/schemas/Error'
   /documents/{id}/image:
     get:
       operationId: getDocumentImage
@@ -275,9 +271,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'          
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
+    DisputeQueue:
+      type: string
+      enum:
+        - FRAUD
+        - VALIDATION
+        - GENERAL
+        - INQUIRIES
+        - UNASSIGNED
     Job:
       description: This object describes the status of an asynchronous task.
       required:
@@ -302,7 +306,7 @@ components:
         {
             "jobId": 1234,
             "status": "completed"
-            document: "4321"
+            "document": "4321"
         }
     DocumentUploadResponse:
       description: This object contains IDs for an uploaded document, and associated job ids for pages in the document
@@ -429,8 +433,8 @@ components:
           minimum: 0
         hasEnvelope:
           type: boolean
-        queues:
-          description: "A list of queues that the system believes the document should be sorted into"
-          type: array
-          items:
-            type: string
+        disputeQueue:
+          description: "The dispute queue to assign the document to."
+          type: string
+          oneOf:
+            - $ref: '#/components/schemas/DisputeQueue'
