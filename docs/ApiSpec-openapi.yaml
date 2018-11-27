@@ -116,29 +116,8 @@ paths:
         required: true
         content:
           multipart/form-data:
-            schema: 
-              type: object
-              properties:
-                accountNumber:
-                  type: string
-                address:
-                  type: object
-                  oneOf:
-                    - $ref: '#/components/schemas/Address'
-                ssn:
-                  type: string
-                  pattern: '^[0-9]{3}-[0-9]{2}-[0-9]{4}$'
-                dateOfBirth:
-                  $ref: '#/components/schemas/Date'
-                letterDate:
-                  $ref: '#/components/schemas/Date'
-                postmarkDate:
-                  $ref: '#/components/schemas/Date'
-                disputeQueue:
-                  description: "The dispute queue to assign the document to."
-                  type: string
-                  oneOf:
-                    - $ref: '#/components/schemas/DisputeQueue'
+            schema:
+              $ref: '#/components/schemas/UpdateDocumentRequest'
 
       responses:
         200:
@@ -401,7 +380,6 @@ components:
           minimum: 1
           maximum: 31
           exclusiveMaximum: false
-
     DocumentResponse:
       description: Metadata that has been extracted from an uploaded document'
       properties:
@@ -433,6 +411,28 @@ components:
           minimum: 0
         hasEnvelope:
           type: boolean
+        disputeQueue:
+          description: "The dispute queue to assign the document to."
+          type: string
+          oneOf:
+            - $ref: '#/components/schemas/DisputeQueue'
+    UpdateDocumentRequest:
+      description: 'A set of optional fields to update specific fields in for a document'
+      properties:
+        accountNumber:
+          description: "The customer's 17-digit account number"
+          type: integer
+        address:
+          $ref: '#/components/schemas/Address'
+        ssn:
+          type: string
+          pattern: '^[0-9]{3}-[0-9]{2}-[0-9]{4}$'
+        dateOfBirth:
+          $ref: '#/components/schemas/Date'
+        letterDate:
+          $ref: '#/components/schemas/Date'
+        postmarkDate:
+          $ref: '#/components/schemas/Date'
         disputeQueue:
           description: "The dispute queue to assign the document to."
           type: string
