@@ -48,12 +48,14 @@ public class PdfUtil {
 
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         for (int i = 0; i < doc.getNumberOfPages(); i++) {
-            var tmp = renderer.renderImage(i);
+            var tmp = renderer.renderImage(i, 2.5f);
             bytes.reset();
             ImageIO.write(tmp, FILE_FORMAT, bytes);
             ret.add(bytes.toByteArray());
         }
+        doc.close();
         bytes.close();
+
 
         return ret;
     }
