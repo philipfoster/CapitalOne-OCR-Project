@@ -40,6 +40,7 @@ public class PgDocumentDao implements DocumentDao {
                 .setNumSimilarDocuments(resultSet.getInt("num_similar_documents"))
                 .setAddressId(resultSet.getInt("address"))
                 .setFingerprint(resultSet.getBytes("fingerprint"))
+                .setQueue(resultSet.getString("queue"))
                 .build();
 
         doc.setId(resultSet.getInt("id"));
@@ -54,18 +55,20 @@ public class PgDocumentDao implements DocumentDao {
 
     @Override
     public void createDocument(Document document) {
+        Objects.requireNonNull(document);
         //language=sql
-        String sql = "INSERT INTO document (account_number, ssn, letter_date, postmark_date, date_of_birth)" +
-                         "VALUES (:acctNo, :ssn, :ldate, :pdate, :dob);";
+        String sql = "INSERT INTO document (account_number, ssn, letter_date, postmark_date, date_of_birth, queue)" +
+                         "VALUES (:acctNo, :ssn, :ldate, :pdate, :dob, :queue);";
 
         // TODO: insert address if non-null
 
-        MapSqlParameterSource source = new MapSqlParameterSource()
-                .addValue("acctNo", ((document == null) || (document.getAccountNumber() <= 0)) ? null : document.getAccountNumber())
-                .addValue("ssn", document != null ? document.getSsn() : null)
-                .addValue("ldate", instant2SqlDate(document != null ? document.getLetterDate() : null))
-                .addValue("pdate", instant2SqlDate(document != null ? document.getPostmarkDate() : null))
-                .addValue("dob", instant2SqlDate(document != null ? document.getDateOfBirth() : null));
+        MapSqlParameterSource source = new MapSqlParameterSource();
+        source.addValue("acctNo", (document.getAccountNumber() == null || document.getAccountNumber() <= 0) ? null : document.getAccountNumber());
+        source.addValue("ssn", document.getSsn());
+        source.addValue("ldate", instant2SqlDate(document.getLetterDate()));
+        source.addValue("pdate", instant2SqlDate(document.getPostmarkDate()));
+        source.addValue("dob", instant2SqlDate(document.getDateOfBirth()));
+        source.addValue("queue", (document.getQueue() == null) ? "general" : document.getQueue());
 
         NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
         KeyHolder holder = new GeneratedKeyHolder();
@@ -80,7 +83,7 @@ public class PgDocumentDao implements DocumentDao {
     @Override
     public int getDocumentIDbyJob(int id) {
         //language=sql
-        String sql = "SELECT document_id FROM document_images JOIN jobs " +
+        String sql = "SELECT document_images.document_id FROM document_images JOIN jobs " +
                 "ON jobs.document_image=document_images.id WHERE jobs.id=:id";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
@@ -133,6 +136,7 @@ public class PgDocumentDao implements DocumentDao {
         logger.info("updating document. " + document);
 
         //language=sql
+        //noinspection SqlWithoutWhere -- Where clause is done later on.
         String sql = "UPDATE document SET num_similar_documents = :similarDocs ";
         MapSqlParameterSource source = new MapSqlParameterSource()
                 .addValue("similarDocs", document.getNumSimilarDocuments());
@@ -155,6 +159,11 @@ public class PgDocumentDao implements DocumentDao {
         if (document.getFingerprint() != null) {
             sql += ", fingerprint = :fingerprint ";
             source.addValue("fingerprint", document.getFingerprint());
+        }
+
+        if (document.getQueue() != null && !document.getQueue().isBlank()) {
+            sql += ", queue = :queue ";
+            source.addValue("queue", document.getQueue());
         }
 
         sql += " WHERE id = :id;";

@@ -65,7 +65,7 @@ public class UploadDocumentController {
      * @param file The file from the request
      * @throws UnsupportedFileTypeException if the client attempts to upload a document with an invalid file type
      * @throws InternalServerErrorException if an unrecoverable error occurs.
-//     */
+     */
     @PostMapping("/documents")
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Transactional(rollbackFor = Exception.class)

@@ -88,7 +88,7 @@ public class JobProcessor {
                 Optional<ProcessingJob> job = jobDao.acceptNextJob(InstanceConfig.INSTANCE_ID);
                 logger.debug("Accepted job " + job.toString());
 
-                if (!job.isPresent()) {
+                if (job.isEmpty()) {
                     // This should reduce load on both the server and the database when few/no jobs are available
                     noOpIterations++;
                     sleep(noOpIterations);
@@ -172,10 +172,18 @@ public class JobProcessor {
         }
         document.setLetterDate(TimeUtils.string2Instant(letterData.getLetterDate()));
 
+        var queueSorter = new LetterQueueProcessor();
+        var normalizedText = queueSorter.normalizeLetterText(letterData);
+        queueSorter.processText(normalizedText);
+        String queue = queueSorter.getFinalQueue();
+
+        logger.info(String.format("Document %s assigned to queue %s. Keyword = %s", document.getId(), queue, queueSorter.getMatchingDescriptions()));
+
+        document.setQueue(queue);
+
         // Save document to database
         documentDao.updateDocument(document);
 
-        // TODO: sort into queue
     }
 
     /**
@@ -195,7 +203,7 @@ public class JobProcessor {
     @NonNull
     private DocumentImage getImageFor(ProcessingJob job) {
         Optional<DocumentImage> image = imageDao.getImageFor(job);
-        if (!image.isPresent()) {
+        if (image.isEmpty()) {
             // This should not happen
             logger.error("Could not find matching image for job " + job);
             throw new IllegalStateException("Could not load image from the database for job " + job);

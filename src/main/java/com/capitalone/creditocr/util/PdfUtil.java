@@ -19,6 +19,13 @@ public class PdfUtil {
     private static final byte[] PDF_HEADER = {0x25, 0x50, 0x44, 0x46};
     private static final String FILE_FORMAT = "PNG";
 
+    /*
+     * Scaling factor for 300 DPI.
+     * A scaling factor in PDFBox of 1 maps to 72dpi.
+     * The constant value is equal to 300/72
+     */
+    private static final float DPI_SCALING_FACTOR = 4.1666666f;
+
 
     public static boolean isPdf(byte[] buffer) {
         if (buffer == null || buffer.length < 4) {
@@ -48,7 +55,7 @@ public class PdfUtil {
 
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         for (int i = 0; i < doc.getNumberOfPages(); i++) {
-            var tmp = renderer.renderImage(i, 2.5f);
+            var tmp = renderer.renderImage(i, DPI_SCALING_FACTOR);
             bytes.reset();
             ImageIO.write(tmp, FILE_FORMAT, bytes);
             ret.add(bytes.toByteArray());
