@@ -133,7 +133,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         400:
-          description: One of the parameters was malformed. If this is returned, no change will be made. The error "message" field will provide details about what went wrong.
+          description: One or more of the parameters was malformed. If this is returned, no change will be made. The error "message" field will provide details about what went wrong.
           content:
             application/json:
               schema:
@@ -326,7 +326,7 @@ components:
           "message": "Some message",
           "status": 123
         }
-    
+
     Address:
       description: 'A street address'
       required:
@@ -349,37 +349,11 @@ components:
         country:
           type: string
       example: |-
-        { 
+        {
           firstLine: "1600 Pennsylvania Ave.",
           state: "Washington D.C.",
           zipCode: "20500"
         }
-    
-    Date: 
-      description: 'A date'
-      properties:
-        year: 
-          type: integer
-        month:
-          type: string
-          enum:
-            - January
-            - February
-            - March
-            - April
-            - May
-            - June
-            - July
-            - August
-            - September
-            - October
-            - November
-            - December
-        day: 
-          type: integer
-          minimum: 1
-          maximum: 31
-          exclusiveMaximum: false
     DocumentResponse:
       description: Metadata that has been extracted from an uploaded document'
       properties:
@@ -395,11 +369,15 @@ components:
           type: string
           pattern: '^[0-9]{3}-[0-9]{2}-[0-9]{4}$'
         dateOfBirth:
-          $ref: '#/components/schemas/Date'
+          description: 'A UNIX timestamp in seconds representing a date'
+          type: integer
         letterDate:
-          $ref: '#/components/schemas/Date'
+          description: 'A UNIX timestamp in seconds representing a date'
+          type: integer
         postmarkDate:
-          $ref: '#/components/schemas/Date'
+          description: 'A UNIX timestamp in seconds representing a date'
+          type: integer
+
         numSimilarDocuments:
           description: "The number of documents that are substantially similar to this one. A high number here indicates that 
                         the document is likely based off of a template."
@@ -428,11 +406,14 @@ components:
           type: string
           pattern: '^[0-9]{3}-[0-9]{2}-[0-9]{4}$'
         dateOfBirth:
-          $ref: '#/components/schemas/Date'
+          description: 'A UNIX timestamp in seconds representing a date'
+          type: integer
         letterDate:
-          $ref: '#/components/schemas/Date'
+          description: 'A UNIX timestamp in seconds representing a date'
+          type: integer
         postmarkDate:
-          $ref: '#/components/schemas/Date'
+          description: 'A UNIX timestamp in seconds representing a date'
+          type: integer
         disputeQueue:
           description: "The dispute queue to assign the document to."
           type: string
