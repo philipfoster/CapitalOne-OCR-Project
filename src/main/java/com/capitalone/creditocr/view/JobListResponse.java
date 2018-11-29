@@ -3,7 +3,7 @@ package com.capitalone.creditocr.view;
 import java.util.List;
 
 
-public class DocumentResponse {
+public class JobListResponse {
 
     private int documentId;
     /**
@@ -11,7 +11,7 @@ public class DocumentResponse {
      */
     private List<Integer> jobIds;
 
-    public DocumentResponse(int documentId, List<Integer> jobIds) {
+    public JobListResponse(int documentId, List<Integer> jobIds) {
         this.documentId = documentId;
         this.jobIds = jobIds;
     }

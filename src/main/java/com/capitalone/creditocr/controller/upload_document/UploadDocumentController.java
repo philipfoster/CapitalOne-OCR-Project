@@ -12,7 +12,7 @@ import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
 import com.capitalone.creditocr.util.PdfUtil;
 import com.capitalone.creditocr.util.UnzipUtil;
-import com.capitalone.creditocr.view.DocumentResponse;
+import com.capitalone.creditocr.view.JobListResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,7 +69,7 @@ public class UploadDocumentController {
     @PostMapping("/documents")
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Transactional(rollbackFor = Exception.class)
-    public List<DocumentResponse> processRequest(@RequestParam("file") MultipartFile file) {
+    public List<JobListResponse> processRequest(@RequestParam("file") MultipartFile file) {
 
         String contentType = file.getContentType();
 
@@ -102,14 +102,14 @@ public class UploadDocumentController {
                 logger.error("Could not store image", e);
                 throw new InternalServerErrorException("Could not store image", e);
             }
-            DocumentResponse response = new DocumentResponse(document.getId(), jobIds);
+            JobListResponse response = new JobListResponse(document.getId(), jobIds);
             return Collections.singletonList(response);
         }
     }
 
 
-    private List<DocumentResponse> processZippedInput(byte[] fileContent) {
-        List<DocumentResponse> responses = new ArrayList<>();
+    private List<JobListResponse> processZippedInput(byte[] fileContent) {
+        List<JobListResponse> responses = new ArrayList<>();
         Path workDir = null;
         try {
             // Extract the zipped contents and write them to a temp directory
@@ -160,8 +160,8 @@ public class UploadDocumentController {
      * Handle the files in the root of the uploaded .zip directory.
      */
     @Transactional
-    List<DocumentResponse> storeIndividualFiles(List<Path> files) throws IOException {
-        List<DocumentResponse> list = new ArrayList<>();
+    List<JobListResponse> storeIndividualFiles(List<Path> files) throws IOException {
+        List<JobListResponse> list = new ArrayList<>();
         for (Path path : files) {
             if (path.toFile().isDirectory()) {
                 // Don't try to ingest a directory. This will be handled by a later iteration
@@ -178,7 +178,7 @@ public class UploadDocumentController {
                 throw new InternalServerErrorException("Could not read file from disk", e);
             }
             List<Integer> jobIds = storeImage(content, ImageType.PNG, 0, document);
-            DocumentResponse resp = new DocumentResponse(document.getId(), jobIds);
+            JobListResponse resp = new JobListResponse(document.getId(), jobIds);
 
             ProcessingJob documentJob = ProcessingJob.documentJob(Instant.now(), document.getId());
             jobDao.createDocumentProcessingJob(documentJob, jobIds);
@@ -195,7 +195,7 @@ public class UploadDocumentController {
         return document;
     }
 
-    private DocumentResponse storeGroupedFiles(List<Path> files) throws IOException {
+    private JobListResponse storeGroupedFiles(List<Path> files) throws IOException {
         Document document = makeDocumentEntry();
         int pageOffset = 0;
         List<Integer> jobIds = new ArrayList<>();
@@ -224,7 +224,7 @@ public class UploadDocumentController {
         ProcessingJob job = ProcessingJob.documentJob(Instant.now(), document.getId());
         jobDao.createDocumentProcessingJob(job, jobIds);
 
-        return new DocumentResponse(document.getId(), jobIds);
+        return new JobListResponse(document.getId(), jobIds);
     }
 
     /**
