@@ -25,13 +25,13 @@ public class DocumentResponseFactory {
      * Get a document response by re-using an existing {@code Document}
      */
     public DocumentResponse getResponse(Document document) {
-        DocumentResponse response = new DocumentResponse(document);
+        DocumentResponse response = new DocumentResponse( document );
 
-        int numPages = documentDao.countDocumentPages(document.getId());
-        response.setNumPages(numPages);
+        int numPages = documentDao.countDocumentPages( document.getId() );
+        response.setNumPages( numPages );
 
-        boolean hasEnvelope = documentDao.hasEnvelope(document.getId());
-        response.setHasEnvelope(hasEnvelope);
+        boolean hasEnvelope = documentDao.hasEnvelope( document.getId() );
+        response.setHasEnvelope( hasEnvelope );
 
         // TODO: get address
 
@@ -40,11 +40,12 @@ public class DocumentResponseFactory {
 
     /**
      * Get a document response by the document ID, if the requested document exists
+     *
      * @param docId the document Id
      */
     public Optional<DocumentResponse> getResponse(int docId) {
 
-        Optional<Document> documentOptional = documentDao.getDocumentById(docId);
+        Optional<Document> documentOptional = documentDao.getDocumentById( docId );
 
         if (documentOptional.isEmpty()) {
             return Optional.empty();

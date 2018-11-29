@@ -27,23 +27,24 @@ import static com.capitalone.creditocr.util.TimeUtils.date2instant;
 @Repository
 public class PgDocumentDao implements DocumentDao {
 
-    private static final Logger logger = LoggerFactory.getLogger(PgDocumentDao.class);
+    private static final Logger logger = LoggerFactory.getLogger( PgDocumentDao.class );
 
     private final DataSource dataSource;
 
     private static final RowMapper<Document> DOCUMENT_ROW_MAPPER = ((resultSet, rNum) -> {
         var doc = Document.builder()
-                .setAccountNumber(resultSet.getLong("account_number"))
-                .setSsn(resultSet.getString("ssn"))
-                .setLetterDate(date2instant(resultSet.getDate("letter_date")))
-                .setPostmarkDate(date2instant(resultSet.getDate("postmark_date")))
-                .setNumSimilarDocuments(resultSet.getInt("num_similar_documents"))
-                .setAddressId(resultSet.getInt("address"))
-                .setFingerprint(resultSet.getBytes("fingerprint"))
-                .setQueue(resultSet.getString("queue"))
+                .setAccountNumber( resultSet.getLong( "account_number" ) )
+                .setSsn( resultSet.getString( "ssn" ) )
+                .setLetterDate( date2instant( resultSet.getDate( "letter_date" ) ) )
+                .setPostmarkDate( date2instant( resultSet.getDate( "postmark_date" ) ) )
+                .setNumSimilarDocuments( resultSet.getInt( "num_similar_documents" ) )
+                .setDateOfBirth( date2instant( resultSet.getDate( "date_of_birth" ) ) )
+                .setAddressId( resultSet.getInt( "address" ) )
+                .setFingerprint( resultSet.getBytes( "fingerprint" ) )
+                .setQueue( resultSet.getString( "queue" ) )
                 .build();
 
-        doc.setId(resultSet.getInt("id"));
+        doc.setId( resultSet.getInt( "id" ) );
         return doc;
     });
 
@@ -55,46 +56,46 @@ public class PgDocumentDao implements DocumentDao {
 
     @Override
     public void createDocument(Document document) {
-        Objects.requireNonNull(document);
+        Objects.requireNonNull( document );
         //language=sql
         String sql = "INSERT INTO document (account_number, ssn, letter_date, postmark_date, date_of_birth, queue)" +
-                         "VALUES (:acctNo, :ssn, :ldate, :pdate, :dob, :queue);";
+                     "VALUES (:acctNo, :ssn, :ldate, :pdate, :dob, :queue);";
 
         // TODO: insert address if non-null
 
         MapSqlParameterSource source = new MapSqlParameterSource();
-        source.addValue("acctNo", (document.getAccountNumber() == null || document.getAccountNumber() <= 0) ? null : document.getAccountNumber());
-        source.addValue("ssn", document.getSsn());
-        source.addValue("ldate", instant2SqlDate(document.getLetterDate()));
-        source.addValue("pdate", instant2SqlDate(document.getPostmarkDate()));
-        source.addValue("dob", instant2SqlDate(document.getDateOfBirth()));
-        source.addValue("queue", (document.getQueue() == null) ? "general" : document.getQueue());
+        source.addValue( "acctNo", (document.getAccountNumber() == null || document.getAccountNumber() <= 0) ? null : document.getAccountNumber() );
+        source.addValue( "ssn", document.getSsn() );
+        source.addValue( "ldate", instant2SqlDate( document.getLetterDate() ) );
+        source.addValue( "pdate", instant2SqlDate( document.getPostmarkDate() ) );
+        source.addValue( "dob", instant2SqlDate( document.getDateOfBirth() ) );
+        source.addValue( "queue", (document.getQueue() == null) ? "general" : document.getQueue() );
 
-        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate( dataSource );
         KeyHolder holder = new GeneratedKeyHolder();
 
-        template.update(sql, source, holder, new String[] {"id"});
+        template.update( sql, source, holder, new String[]{"id"} );
         Map<String, Object> keyMap = holder.getKeys();
-        Objects.requireNonNull(keyMap);
+        Objects.requireNonNull( keyMap );
 
-        document.setId((Integer) keyMap.get("id"));
+        document.setId( (Integer) keyMap.get( "id" ) );
     }
 
     @Override
     public int getDocumentIDbyJob(int id) {
         //language=sql
         String sql = "SELECT document_images.document_id FROM document_images JOIN jobs " +
-                "ON jobs.document_image=document_images.id WHERE jobs.id=:id";
+                     "ON jobs.document_image=document_images.id WHERE jobs.id=:id";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
-                .addValue("id",id);
+                .addValue( "id", id );
 
-        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate( dataSource );
 
-        RowMapper<Integer> rmap = (results, rowNumber) -> results.getInt("document_id");
-        List<Integer> idList = template.query(sql, source, rmap);
+        RowMapper<Integer> rmap = (results, rowNumber) -> results.getInt( "document_id" );
+        List<Integer> idList = template.query( sql, source, rmap );
 
-        return idList.get(0);
+        return idList.get( 0 );
     }
 
     @Override
@@ -103,15 +104,15 @@ public class PgDocumentDao implements DocumentDao {
         String sql = " SELECT * FROM document WHERE id = :id;";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
-                .addValue("id", id);
-        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+                .addValue( "id", id );
+        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate( dataSource );
 
-        List<Document> docs = template.query(sql,source, DOCUMENT_ROW_MAPPER);
+        List<Document> docs = template.query( sql, source, DOCUMENT_ROW_MAPPER );
 
         if (docs.size() == 0) {
             return Optional.empty();
         } else {
-            return Optional.of(docs.get(0));
+            return Optional.of( docs.get( 0 ) );
         }
     }
 
@@ -124,53 +125,58 @@ public class PgDocumentDao implements DocumentDao {
                      " and 1-(bytea_bitsset(bytea_xor(:fingerprint, document.fingerprint))/128::float) > :sensitivity;";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
-                .addValue("fingerprint", fingerprint)
-                .addValue("sensitivity", sensitivity);
-        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+                .addValue( "fingerprint", fingerprint )
+                .addValue( "sensitivity", sensitivity );
+        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate( dataSource );
 
-        return template.query(sql, source, (resultSet, rowNum) -> resultSet.getInt("id"));
+        return template.query( sql, source, (resultSet, rowNum) -> resultSet.getInt( "id" ) );
     }
 
     @Override
     public void updateDocument(Document document) {
-        logger.info("updating document. " + document);
+        logger.info( "updating document. " + document );
 
         //language=sql
         //noinspection SqlWithoutWhere -- Where clause is done later on.
         String sql = "UPDATE document SET num_similar_documents = :similarDocs ";
         MapSqlParameterSource source = new MapSqlParameterSource()
-                .addValue("similarDocs", document.getNumSimilarDocuments());
+                .addValue( "similarDocs", document.getNumSimilarDocuments() );
 
         if (document.getAccountNumber() != null) {
             sql += ", account_number = :acctNo ";
-            source.addValue("acctNo", document.getAccountNumber());
+            source.addValue( "acctNo", document.getAccountNumber() );
         }
 
         if (document.getSsn() != null) {
             sql += ", ssn = :ssn ";
-            source.addValue("ssn", document.getSsn());
+            source.addValue( "ssn", document.getSsn() );
         }
 
         if (document.getLetterDate() != null) {
             sql += ", letter_date = :letterDate ";
-            source.addValue("letterDate", TimeUtils.instant2date(document.getLetterDate()));
+            source.addValue( "letterDate", TimeUtils.instant2date( document.getLetterDate() ) );
+        }
+
+        if (document.getDateOfBirth() != null) {
+            sql += ", date_of_birth = :dob";
+            source.addValue( "dob", TimeUtils.instant2date( document.getDateOfBirth() ) );
         }
 
         if (document.getFingerprint() != null) {
             sql += ", fingerprint = :fingerprint ";
-            source.addValue("fingerprint", document.getFingerprint());
+            source.addValue( "fingerprint", document.getFingerprint() );
         }
 
         if (document.getQueue() != null && !document.getQueue().isBlank()) {
             sql += ", queue = :queue ";
-            source.addValue("queue", document.getQueue());
+            source.addValue( "queue", document.getQueue() );
         }
 
         sql += " WHERE id = :id;";
-        source.addValue("id", document.getId());
+        source.addValue( "id", document.getId() );
 
-        var template = new NamedParameterJdbcTemplate(dataSource);
-        template.update(sql, source);
+        var template = new NamedParameterJdbcTemplate( dataSource );
+        template.update( sql, source );
     }
 
     @Override
@@ -181,10 +187,10 @@ public class PgDocumentDao implements DocumentDao {
                      " where document_id = :id;";
 
         var source = new MapSqlParameterSource()
-                .addValue("id", documentId);
-        var template = new NamedParameterJdbcTemplate(dataSource);
+                .addValue( "id", documentId );
+        var template = new NamedParameterJdbcTemplate( dataSource );
 
-        return template.query(sql, source, (rs, __) -> rs.getInt("count")).get(0);
+        return template.query( sql, source, (rs, __) -> rs.getInt( "count" ) ).get( 0 );
     }
 
     @Override
@@ -196,16 +202,16 @@ public class PgDocumentDao implements DocumentDao {
                      " and is_envelope = true;";
 
         var source = new MapSqlParameterSource()
-                .addValue("id", documentId);
-        var template = new NamedParameterJdbcTemplate(dataSource);
+                .addValue( "id", documentId );
+        var template = new NamedParameterJdbcTemplate( dataSource );
 
-        return template.query(sql, source, ((rs, __) -> rs.getBoolean("hasEnvelope"))).get(0);
+        return template.query( sql, source, ((rs, __) -> rs.getBoolean( "hasEnvelope" )) ).get( 0 );
     }
 
     private static Date instant2SqlDate(@Nullable Instant instant) {
         if (instant == null) {
             return null;
         }
-        return new Date(instant.toEpochMilli());
+        return new Date( instant.toEpochMilli() );
     }
 }

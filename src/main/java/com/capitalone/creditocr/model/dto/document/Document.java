@@ -137,9 +137,11 @@ public final class Document {
     }
 
     public void setFingerprint(@Nullable byte[] fingerprint) {
-
         this.fingerprint = fingerprint;
+    }
 
+    public void setDateOfBirth(@Nullable Instant dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
     }
 
     @Override
