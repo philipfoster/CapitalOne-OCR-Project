@@ -32,5 +32,21 @@ public interface DocumentDao {
      */
     List<Integer> getSimilarDocumentIds(byte[] fingerprint, float sensitivity);
 
+    /**
+     * Update fields for a document.
+     */
     void updateDocument(Document document);
+
+    /**
+     *
+     * @param documentId the document ID to look up
+     * @return the number of pages in the specified document, or {@code 0} if the document does not exist
+     */
+    int countDocumentPages(int documentId);
+
+    /**
+     * Check if the document has an envelope
+     * @param documentId the document id to lookup
+     */
+    boolean hasEnvelope(int documentId);
 }

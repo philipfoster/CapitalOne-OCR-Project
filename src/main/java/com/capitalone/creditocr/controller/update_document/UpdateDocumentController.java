@@ -5,6 +5,7 @@ import com.capitalone.creditocr.controller.exception.FileNotFoundException;
 import com.capitalone.creditocr.model.dao.DocumentDao;
 import com.capitalone.creditocr.model.dto.document.Document;
 import com.capitalone.creditocr.view.DocumentResponse;
+import com.capitalone.creditocr.view.factory.DocumentResponseFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,14 +21,15 @@ import java.util.Set;
 public class UpdateDocumentController {
 
     private final DocumentDao documentDao;
-
+    private final DocumentResponseFactory responseFactory;
 
     private static final Set<String> QUEUES = Set.of("fraud", "validation", "general", "inquiries");
     private static final String SSN_REGEX = "[0-9]{3}-?[0-9]{2}-?[0-9]{4}";
 
     @Autowired
-    public UpdateDocumentController(DocumentDao documentDao) {
+    public UpdateDocumentController(DocumentDao documentDao, DocumentResponseFactory responseFactory) {
         this.documentDao = documentDao;
+        this.responseFactory = responseFactory;
     }
 
     @PatchMapping("/documents/{id}")
@@ -76,7 +78,7 @@ public class UpdateDocumentController {
 
         documentDao.updateDocument(document);
 
-        return new DocumentResponse(document);
+        return responseFactory.getResponse(document);
     }
 
     /**

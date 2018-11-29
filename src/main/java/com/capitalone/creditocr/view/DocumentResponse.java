@@ -41,8 +41,6 @@ public class DocumentResponse {
         numSimilarDocuments = document.getNumSimilarDocuments();
 
         disputeQueue = document.getQueue();
-
-        // TODO: Create factory class to load page count, hasEnvelope, and address info from the DB.
     }
 
 
@@ -84,6 +82,14 @@ public class DocumentResponse {
 
     public String getDisputeQueue() {
         return disputeQueue;
+    }
+
+    public void setNumPages(int numPages) {
+        this.numPages = numPages;
+    }
+
+    public void setHasEnvelope(boolean hasEnvelope) {
+        this.hasEnvelope = hasEnvelope;
     }
 
     @Override

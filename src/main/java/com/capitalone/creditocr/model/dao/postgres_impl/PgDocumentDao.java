@@ -173,11 +173,39 @@ public class PgDocumentDao implements DocumentDao {
         template.update(sql, source);
     }
 
+    @Override
+    public int countDocumentPages(int documentId) {
+        // language=sql
+        String sql = " select count(id) as count " +
+                     " from document_images " +
+                     " where document_id = :id;";
 
-private static Date instant2SqlDate(@Nullable Instant instant) {
+        var source = new MapSqlParameterSource()
+                .addValue("id", documentId);
+        var template = new NamedParameterJdbcTemplate(dataSource);
+
+        return template.query(sql, source, (rs, __) -> rs.getInt("count")).get(0);
+    }
+
+    @Override
+    public boolean hasEnvelope(int documentId) {
+        //language=sql
+        String sql = " select (count(id) > 0) as hasEnvelope " +
+                     " from document_images " +
+                     " where document_id = :id " +
+                     " and is_envelope = true;";
+
+        var source = new MapSqlParameterSource()
+                .addValue("id", documentId);
+        var template = new NamedParameterJdbcTemplate(dataSource);
+
+        return template.query(sql, source, ((rs, __) -> rs.getBoolean("hasEnvelope"))).get(0);
+    }
+
+    private static Date instant2SqlDate(@Nullable Instant instant) {
         if (instant == null) {
-        return null;
+            return null;
         }
         return new Date(instant.toEpochMilli());
-        }
-        }
+    }
+}
