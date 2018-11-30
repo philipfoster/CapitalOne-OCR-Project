@@ -63,7 +63,6 @@ public class UpdateDocumentController {
         }
 
         if (dob != null) {
-            //FIXME: date of birth could be before UNIX epoch, which this does not support.
             document.setDateOfBirth( Instant.ofEpochSecond( dob ) );
         }
 
