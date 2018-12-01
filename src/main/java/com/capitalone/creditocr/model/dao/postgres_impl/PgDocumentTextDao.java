@@ -43,9 +43,11 @@ public class PgDocumentTextDao implements DocumentTextDao {
     @Override
     public Optional<String> getDocumentTextById(int id) {
         //language=sql
-        String sql = "SELECT original_text AS text FROM document_text, document_images " +
-                " WHERE document_text.image_id = images.id " +
-                "   AND document_images.document_id = :docId;";
+        String sql = " select original_text as text " +
+                     " from document_images image " +
+                     "        inner join document_text dt on image.id = dt.image_id " +
+                     " where document_id = :docId " +
+                     " order by image.page_number asc; ";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
                 .addValue("docId",  id);
@@ -53,10 +55,15 @@ public class PgDocumentTextDao implements DocumentTextDao {
         NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
         List<String> result = template.query(sql, source, (rSet, rNum) -> rSet.getString("text"));
 
+
         if (result.isEmpty()) {
             return Optional.empty();
         } else {
-            return Optional.of(result.get(0));
+            StringBuilder ret = new StringBuilder();
+            for (String s : result) {
+                ret.append( s );
+            }
+            return Optional.of( ret.toString() );
         }
     }
 

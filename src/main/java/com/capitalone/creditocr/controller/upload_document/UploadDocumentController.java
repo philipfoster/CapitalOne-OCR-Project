@@ -260,6 +260,7 @@ public class UploadDocumentController {
     }
 
     private List<Integer> storePdf(byte[] fileContent, int pageNum, Document document) throws IOException {
+        // TODO: This should probably generate a new job instead of doing it now.
         List<byte[]> pngs = PdfUtil.pdf2png(fileContent);
         List<Integer> ret = new ArrayList<>();
 
