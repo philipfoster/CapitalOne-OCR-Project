@@ -40,6 +40,11 @@ public class PgDocumentTextDao implements DocumentTextDao {
     }
 
 
+    /**
+     * Get the full text of a document by its ID
+     * @param id the ID of the document to load
+     * @return the document's text, if the ID exists.
+     */
     @Override
     public Optional<String> getDocumentTextById(int id) {
         //language=sql

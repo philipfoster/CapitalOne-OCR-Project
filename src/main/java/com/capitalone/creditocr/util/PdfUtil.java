@@ -20,11 +20,10 @@ public class PdfUtil {
     private static final String FILE_FORMAT = "PNG";
 
     /*
-     * Scaling factor for 300 DPI.
+     * Scaling factor for 150 DPI.
      * A scaling factor in PDFBox of 1 maps to 72dpi.
-     * The constant value is equal to 300/72
      */
-    private static final float DPI_SCALING_FACTOR = 4.1666666f;
+    private static final float DPI_SCALING_FACTOR = 150f / 72f;
 
 
     public static boolean isPdf(byte[] buffer) {

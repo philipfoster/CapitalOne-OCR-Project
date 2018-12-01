@@ -202,7 +202,7 @@ public class JobProcessor {
      */
     @NonNull
     private DocumentImage getImageFor(ProcessingJob job) {
-        Optional<DocumentImage> image = imageDao.getImageFor(job);
+        Optional<DocumentImage> image = imageDao.getImageForJob(job);
         if (image.isEmpty()) {
             // This should not happen
             logger.error("Could not find matching image for job " + job);

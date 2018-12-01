@@ -223,7 +223,7 @@ paths:
       - name: envelope
         in: query
         description: 'This flag parameter indicates that the image of the envelope should be returned, instead of a page. This field is mutually exclusive with the page parameter. If both are specified,
-                      then this field will be ignored, and the requested page will be returned instead.'
+                      then the envelope will be returned and the page is ignored..'
         required: false
       responses:
         200:
@@ -234,10 +234,6 @@ paths:
                 type: string
                 format: binary
             image/png:
-              schema:
-                type: string
-                format: binary
-            application/pdf:
               schema:
                 type: string
                 format: binary
