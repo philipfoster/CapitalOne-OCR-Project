@@ -6,7 +6,6 @@ import java.util.Optional;
 
 public interface DocumentTextDao {
 
-
     /**
      * Load the text for a specific doucment.
      * @param id the ID of the document to load

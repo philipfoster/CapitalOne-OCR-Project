@@ -16,6 +16,8 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -31,22 +33,7 @@ public class PgDocumentDao implements DocumentDao {
 
     private final DataSource dataSource;
 
-    private static final RowMapper<Document> DOCUMENT_ROW_MAPPER = ((resultSet, rNum) -> {
-        var doc = Document.builder()
-                .setAccountNumber( resultSet.getLong( "account_number" ) )
-                .setSsn( resultSet.getString( "ssn" ) )
-                .setLetterDate( date2instant( resultSet.getDate( "letter_date" ) ) )
-                .setPostmarkDate( date2instant( resultSet.getDate( "postmark_date" ) ) )
-                .setNumSimilarDocuments( resultSet.getInt( "num_similar_documents" ) )
-                .setDateOfBirth( date2instant( resultSet.getDate( "date_of_birth" ) ) )
-                .setAddressId( resultSet.getInt( "address" ) )
-                .setFingerprint( resultSet.getBytes( "fingerprint" ) )
-                .setQueue( resultSet.getString( "queue" ) )
-                .build();
-
-        doc.setId( resultSet.getInt( "id" ) );
-        return doc;
-    });
+    private static final RowMapper<Document> DOCUMENT_ROW_MAPPER = ((resultSet, rNum) -> mapRow( resultSet ));
 
     @Autowired
     public PgDocumentDao(DataSource dataSource) {
@@ -206,6 +193,46 @@ public class PgDocumentDao implements DocumentDao {
         var template = new NamedParameterJdbcTemplate( dataSource );
 
         return template.query( sql, source, ((rs, __) -> rs.getBoolean( "hasEnvelope" )) ).get( 0 );
+    }
+
+
+    @Override
+    public List<Document> getDocumentsByKeyword(String keyword, int pageSize, int pageNum) {
+        //language=sql
+        String sql = " select distinct document.*, ts_rank_cd(vectorized_text || to_tsvector(lower(queue)), to_tsquery(:searchString)) as rank " +
+                     " from document " +
+                     " inner join document_images image on document.id = image.document_id " +
+                     " inner join document_text text on image.id = text.image_id " +
+                     " where (vectorized_text || to_tsvector(lower(queue))) @@ to_tsquery(:searchString) " +
+                     " order by rank DESC " +
+                     " limit :limit " +
+                     " offset :limit * :pageNum";
+
+        var source = new MapSqlParameterSource()
+                .addValue( "searchString", keyword )
+                .addValue( "limit", pageSize )
+                .addValue( "pageNum", pageNum );
+
+        var template = new NamedParameterJdbcTemplate( dataSource );
+        return template.query( sql, source, DOCUMENT_ROW_MAPPER);
+    }
+
+
+    private static Document mapRow(ResultSet resultSet) throws SQLException {
+        var doc = Document.builder()
+                .setAccountNumber( resultSet.getLong( "account_number" ) )
+                .setSsn( resultSet.getString( "ssn" ) )
+                .setLetterDate( date2instant( resultSet.getDate( "letter_date" ) ) )
+                .setPostmarkDate( date2instant( resultSet.getDate( "postmark_date" ) ) )
+                .setNumSimilarDocuments( resultSet.getInt( "num_similar_documents" ) )
+                .setDateOfBirth( date2instant( resultSet.getDate( "date_of_birth" ) ) )
+                .setAddressId( resultSet.getInt( "address" ) )
+                .setFingerprint( resultSet.getBytes( "fingerprint" ) )
+                .setQueue( resultSet.getString( "queue" ) )
+                .build();
+
+        doc.setId( resultSet.getInt( "id" ) );
+        return doc;
     }
 
     private static Date instant2SqlDate(@Nullable Instant instant) {
