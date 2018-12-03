@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -32,10 +33,14 @@ public class InfoExtractor {
     each other. This method should get values for firstName,
     lastName, and address.
     */
+    @SuppressWarnings("Duplicates")
     public LetterData extractAddress(LetterData letter) {
-        try {
-            TokenNameFinderModel nerModel = new TokenNameFinderModel(getClass().getResourceAsStream("/resources/static/opennlp/en-ner-address.bin"));
-            TokenizerModel tokenizerModel = new TokenizerModel(getClass().getResourceAsStream("/resources/static/opennlp/en-token.bin"));
+        try (
+                InputStream addressStream = getClass().getResourceAsStream("/BOOT-INF/classes/static/opennlp/en-ner-address.bin");
+                InputStream tokenStream = getClass().getResourceAsStream("/BOOT-INF/classes/static/opennlp/en-token.bin")
+        ) {
+            TokenNameFinderModel nerModel = new TokenNameFinderModel(addressStream);
+            TokenizerModel tokenizerModel = new TokenizerModel(tokenStream);
 
             Tokenizer tokenizer = new TokenizerME(tokenizerModel);
             NameFinderME addressFinder = new NameFinderME(nerModel);
@@ -66,11 +71,15 @@ public class InfoExtractor {
     Method to extract date and account number from the text.
     This should get values for letterDate and acctNum.
     */
+    @SuppressWarnings("Duplicates")
     public LetterData extractDate(LetterData letter) {
-        try {
+        try (
+                InputStream dateStream = getClass().getResourceAsStream("/BOOT-INF/classes/static/opennlp/en-ner-date.bin");
+                InputStream tokenStream = getClass().getResourceAsStream("/BOOT-INF/classes/static/opennlp/en-token.bin")
+        ) {
             //Define models for OpenNLP
-            TokenNameFinderModel nerModel = new TokenNameFinderModel(getClass().getResourceAsStream("/resources/static/opennlp/en-ner-date.bin"));
-            TokenizerModel tokenizerModel = new TokenizerModel(getClass().getResourceAsStream("/resources/static/opennlp/en-token.bin"));
+            TokenNameFinderModel nerModel = new TokenNameFinderModel(dateStream);
+            TokenizerModel tokenizerModel = new TokenizerModel(tokenStream);
             //Create objects for OpenNLP with models
             Tokenizer tokenizer = new TokenizerME(tokenizerModel);
             NameFinderME dateFinder = new NameFinderME(nerModel);
@@ -80,10 +89,12 @@ public class InfoExtractor {
             String[] dates = Span.spansToStrings(nameSpans, tokens); //Convert date spans to Strings
             Vector<String> dateVec = new Vector<>(); //For elimination of duplicate dates
             Vector<Instant> instVec = new Vector<>(); //To store dates as Instants
+
             //Placeholders for desired data values
             Instant birthDate = null;
             Instant letterDate = null;
             Instant postmarkDate = null;
+
             //Instants for key dates
             Instant now = Instant.now(); //Current date
             Instant yearAgo = ZonedDateTime.now().minusYears(1).toInstant(); //1 year ago
@@ -100,6 +111,7 @@ public class InfoExtractor {
                     }
                 }
             }
+
             for(Instant inst : instVec) {
                 if(inst.isAfter(yearAgo)) { //Date is within the last year
                     if(letterDate == null) {
@@ -149,7 +161,8 @@ public class InfoExtractor {
         } catch (IOException ex) {
             logger.error("One or more models could not be loaded.", ex);
         }
-            return letter;
+
+        return letter;
     }
 
     /*
