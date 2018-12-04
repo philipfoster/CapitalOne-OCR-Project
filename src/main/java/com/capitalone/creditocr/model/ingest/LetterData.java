@@ -1,15 +1,17 @@
 package com.capitalone.creditocr.model.ingest;
 
+import java.time.Instant;
+
 public class LetterData {
 
     //Letter text
     private String text;
     //Customer's date of birth
-    private String birthDate = "";
+    private Instant birthDate;
     //Date of the letter
-    private String letterDate = "";
+    private Instant letterDate;
     //Date of postmark
-    private String postmarkDate = "";
+    private Instant postmarkDate;
     //First line of address (Ex: 1234 Main St.)
     private String streetAddress = "";
     //Customer's 17-digit Capital One account number
@@ -29,27 +31,27 @@ public class LetterData {
         this.text = text;
     }
 
-    public String getBirthDate() {
+    public Instant getBirthDate() {
         return birthDate;
     }
 
-    public void setBirthDate(String birthDate) {
+    public void setBirthDate(Instant birthDate) {
         this.birthDate = birthDate;
     }
 
-    public String getLetterDate() {
+    public Instant getLetterDate() {
         return letterDate;
     }
 
-    public void setLetterDate(String letterDate) {
+    public void setLetterDate(Instant letterDate) {
         this.letterDate = letterDate;
     }
 
-    public String getPostmarkDate() {
+    public Instant getPostmarkDate() {
         return postmarkDate;
     }
 
-    public void setPostmarkDate(String postmarkDate) {
+    public void setPostmarkDate(Instant postmarkDate) {
         this.postmarkDate = postmarkDate;
     }
 
