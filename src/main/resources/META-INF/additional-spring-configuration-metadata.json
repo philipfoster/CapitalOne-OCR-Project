@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "processor.maxSleep",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of seconds to sleep between checking for new jobs."
+    },
+    {
+      "name": "processor.similarityThreshold",
+      "type": "java.lang.Float",
+      "description": "The minimum percent similarity between two documents to be considered toward template detection."
+    },
+    {
+      "name": "processor.maxWorkerThreads",
+      "type": "java.lang.Integer",
+      "description": "The maximum thread pool size for processing jobs."
+    }
+  ]
+}

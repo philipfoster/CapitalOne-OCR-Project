@@ -32,7 +32,6 @@ public class JobProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(JobProcessor.class);
 
-    // TODO: Make this configurable.
     private static final long MS_PER_SECOND = 1000L;
 
     @Value( "${processor.maxSleep}" )
