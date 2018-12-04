@@ -1,5 +1,6 @@
 package com.capitalone.creditocr.model.ingest;
 
+import com.capitalone.creditocr.util.TimeUtils;
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
 import opennlp.tools.tokenize.Tokenizer;
@@ -13,11 +14,10 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +26,11 @@ import java.util.regex.Pattern;
 public class InfoExtractor {
 
     private static final Logger logger = LoggerFactory.getLogger(InfoExtractor.class);
+
+    private Pattern[] datePatterns = {
+            Pattern.compile("\\d{1,2}[-|/]\\d{1,2}[-|/]\\d{4}"), // Dates in m/d/y, or m-d-y format.
+            Pattern.compile("[a-z|A-Z]{3,9}+\\s+\\d{1,2}[,]?\\s+[\\d{2}|\\d{4}]") // spelled out date (April 12 2019)
+    };
 
     /*
     Method to extract name and address data from the text. These
@@ -73,95 +78,89 @@ public class InfoExtractor {
     */
     @SuppressWarnings("Duplicates")
     public LetterData extractDate(LetterData letter) {
-        try (
-                InputStream dateStream = getClass().getResourceAsStream("/BOOT-INF/classes/static/opennlp/en-ner-date.bin");
-                InputStream tokenStream = getClass().getResourceAsStream("/BOOT-INF/classes/static/opennlp/en-token.bin")
-        ) {
-            //Define models for OpenNLP
-            TokenNameFinderModel nerModel = new TokenNameFinderModel(dateStream);
-            TokenizerModel tokenizerModel = new TokenizerModel(tokenStream);
-            //Create objects for OpenNLP with models
-            Tokenizer tokenizer = new TokenizerME(tokenizerModel);
-            NameFinderME dateFinder = new NameFinderME(nerModel);
 
-            String[] tokens = tokenizer.tokenize(letter.getText()); //Tokenize letter text
-            Span[] nameSpans = dateFinder.find(tokens); //Find dates
-            String[] dates = Span.spansToStrings(nameSpans, tokens); //Convert date spans to Strings
-            Vector<String> dateVec = new Vector<>(); //For elimination of duplicate dates
-            Vector<Instant> instVec = new Vector<>(); //To store dates as Instants
+        List<Instant> dates = new ArrayList<>(  );
+        for (Pattern datePattern : datePatterns) {
+            Matcher matcher = datePattern.matcher( letter.getText() );
 
-            //Placeholders for desired data values
-            Instant birthDate = null;
-            Instant letterDate = null;
-            Instant postmarkDate = null;
+            while (matcher.find()) {
+                String match = matcher.group();
+                var instant = TimeUtils.string2Instant( match );
 
-            //Instants for key dates
-            Instant now = Instant.now(); //Current date
-            Instant yearAgo = ZonedDateTime.now().minusYears(1).toInstant(); //1 year ago
-            Instant yearsAgo18 = ZonedDateTime.now().minusYears(18).toInstant(); //18 years ago
-            for(String date : dates) {
-                if(!dateVec.contains(date)) {
-                    dateVec.add(date); //eliminate duplicates
-                    Instant inst = LocalDateTime.parse(date,
-                            DateTimeFormatter.ofPattern("hh:mm a, EEE M/d/uuuu", Locale.US ))
-                            .atZone(ZoneId.of("America/Toronto")
-                            ).toInstant(); //Convert String date to Instant
-                    if(inst.isBefore(now)) { //Ignore
-                        instVec.add(inst);
+                if (matcher.start() > 0) {
+                    if (("" + letter.getText().charAt( matcher.start() - 1 )).matches( "\\d" )) {
+                        // Filter out the case where the regex matches a SSN.
+                        continue;
                     }
                 }
+                dates.add( instant );
             }
-
-            for(Instant inst : instVec) {
-                if(inst.isAfter(yearAgo)) { //Date is within the last year
-                    if(letterDate == null) {
-                        //Assume the date is the letter date
-                        letterDate = inst;
-                    }
-                    else if(postmarkDate == null) {
-                        if(inst.isAfter(letterDate)) {
-                            //If date is after the letter date, assume
-                            //it is the postmark date
-                            postmarkDate = inst;
-                        }
-                        else if(inst.isBefore(letterDate)) {
-                            //If date is before the letter date, assume
-                            //it is the actual letter date and make the
-                            //old letter date the postmark date.
-                            postmarkDate = letterDate;
-                            letterDate = inst;
-                        }
-                    }
-                    else if(inst.isAfter(postmarkDate)) { //3rd or more date in last year
-                        //Keep 2 most recent dates
-                        letterDate = postmarkDate;
-                        postmarkDate = inst;
-                    }
-                    else if(inst.isAfter(letterDate)) { //3rd or more date in last year
-                        //Keep 2 most recent dates
-                        letterDate = inst;
-                    }
-                }
-                else if(inst.isBefore(yearsAgo18)) { //Date is more than 18 years ago
-                    birthDate = inst; //Date is almost certainly the customer's birth date.
-                }
-                /*
-                If the date is between 1 and 18 years ago, it is unlikely
-                to be the letter date, postmark date, or birth date. So
-                unlikely, in fact, that we consider any date in this time
-                period to be a red herring and ignore it.
-                */
-            }
-            if(letterDate != null)
-                letter.setLetterDate(letterDate.toString());
-            if(postmarkDate != null)
-                letter.setPostmarkDate(postmarkDate.toString());
-            if(birthDate != null)
-                letter.setBirthDate(birthDate.toString());
-        } catch (IOException ex) {
-            logger.error("One or more models could not be loaded.", ex);
         }
 
+        var now = Instant.now();
+
+        // Filter dates in the future, since they can't be either dob, letter date, or postmark
+        List<Instant> instantList = new ArrayList<>();
+        for (Instant date : dates) {
+            if (date != null && date.isBefore( now )) {
+                instantList.add( date );
+            }
+        }
+        instantList.sort( Comparator.reverseOrder() );
+
+        logger.info( String.format( "dates = %s", instantList) );
+
+        if (instantList.isEmpty()) {
+            return letter;
+        }
+
+        Instant birthDate = null;
+        Instant postmarkDate = null;
+        Instant letterDate = null;
+
+
+        // TODO: Fix this...
+        for (Instant inst : instantList) {
+
+            if (inst.isBefore( now.minus( 18 * 365, ChronoUnit.DAYS ) )) { //Date is more than 18 years ago
+                birthDate = inst; //Date is almost certainly the customer's birth date.
+            } else if (inst.isAfter( now.minus( 365, ChronoUnit.DAYS ) )) { //Date is within the last year
+                if (letterDate == null) {
+                    //Assume the date is the letter date
+                    letterDate = inst;
+                } else if (postmarkDate == null) {
+                    if (inst.isAfter( letterDate )) {
+                        //If date is after the letter date, assume
+                        //it is the postmark date
+                        postmarkDate = inst;
+                    } else if (inst.isBefore( letterDate )) {
+                        //If date is before the letter date, assume
+                        //it is the actual letter date and make the
+                        //old letter date the postmark date.
+                        postmarkDate = letterDate;
+                        letterDate = inst;
+                    }
+                } else if (inst.isAfter( postmarkDate )) { //3rd or more date in last year
+                    //Keep 2 most recent dates
+                    letterDate = postmarkDate;
+                    postmarkDate = inst;
+                } else if (inst.isAfter( letterDate )) { //3rd or more date in last year
+                    //Keep 2 most recent dates
+                    letterDate = inst;
+                }
+            }
+        }
+
+
+        if (birthDate != null) {
+            letter.setBirthDate( birthDate );
+        }
+        if (postmarkDate != null) {
+            letter.setPostmarkDate( postmarkDate );
+        }
+        if (letterDate != null) {
+            letter.setLetterDate( letterDate );
+        }
         return letter;
     }
 
