@@ -2,6 +2,7 @@ package com.capitalone.creditocr.model.dao.postgres_impl;
 
 import com.capitalone.creditocr.model.dao.DocumentDao;
 import com.capitalone.creditocr.model.dto.document.Document;
+import com.capitalone.creditocr.util.Simhash;
 import com.capitalone.creditocr.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,14 +106,19 @@ public class PgDocumentDao implements DocumentDao {
 
     @Override
     public List<Integer> getSimilarDocumentIds(byte[] fingerprint, float sensitivity) {
+        long[] split = Simhash.splitHash(fingerprint);
+
         //language=sql
         String sql = " select id" +
                      " from document " +
-                     " where document.fingerprint is not null " +
-                     " and 1-(bytea_bitsset(bytea_xor(:fingerprint, document.fingerprint))/128::float) > :sensitivity;";
+                     " where document.left_fingerprint != 0 " +
+                     " and document.right_fingerprint !=  0 " +
+                     " and 1-(length(regexp_replace((left_fingerprint # :leftHash)::bit(64)::text, '0', '', 'g')) + length(regexp_replace((right_fingerprint # :rightHash)::bit(64)::text, '0', '', 'g')))/128::float > :sensitivity;";
 
         MapSqlParameterSource source = new MapSqlParameterSource()
-                .addValue( "fingerprint", fingerprint )
+                .addValue( "leftHash", split[0] )
+                .addValue( "rightHash", split[1] )
+//                .addValue( "fingerprint", fingerprint )
                 .addValue( "sensitivity", sensitivity );
         NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate( dataSource );
 
@@ -150,8 +156,10 @@ public class PgDocumentDao implements DocumentDao {
         }
 
         if (document.getFingerprint() != null) {
-            sql += ", fingerprint = :fingerprint ";
-            source.addValue( "fingerprint", document.getFingerprint() );
+            long[] splitFprint = Simhash.splitHash( document.getFingerprint() );
+            sql += ", left_fingerprint = :leftFprint, right_fingerprint = :rightFprint ";
+            source.addValue( "leftFprint", splitFprint[0] );
+            source.addValue( "rightFprint", splitFprint[1] );
         }
 
         if (document.getQueue() != null && !document.getQueue().isBlank()) {
@@ -227,9 +235,14 @@ public class PgDocumentDao implements DocumentDao {
                 .setNumSimilarDocuments( resultSet.getInt( "num_similar_documents" ) )
                 .setDateOfBirth( date2instant( resultSet.getDate( "date_of_birth" ) ) )
                 .setAddressId( resultSet.getInt( "address" ) )
-                .setFingerprint( resultSet.getBytes( "fingerprint" ) )
+//                .setFingerprint( resultSet.getBytes( "fingerprint" ) )
                 .setQueue( resultSet.getString( "queue" ) )
                 .build();
+
+        long[] fprint = new long[2];
+        fprint[0] = resultSet.getLong( "left_fingerprint" );
+        fprint[1] = resultSet.getLong( "right_fingerprint" );
+        doc.setFingerprint( Simhash.unsplitHash( fprint ) );
 
         doc.setId( resultSet.getInt( "id" ) );
         return doc;

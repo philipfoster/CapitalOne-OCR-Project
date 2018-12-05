@@ -4,7 +4,8 @@ services:
   # Postgres database
   database:
     hostname: postgres
-    image: philipfoster/postgres-bytea-ops
+    image: postgres
+#    image: philipfoster/postgres-bytea-ops
     ports:
       - "5432:5432"
     deploy:
@@ -13,7 +14,7 @@ services:
       restart_policy:
         condition: on-failure
     volumes:
-      - pgData:/var/lib/ocr/data
+      - pgData2:/var/lib/ocr/data
     environment:
       - PGDATA=/var/lib/ocr/data/pgdata
       # These are for development only, so it's ok that the password is insecure
@@ -26,12 +27,14 @@ services:
     image: credit-ocr
     ports:
       - "8080:8080"
-      - "5005:5005" # Remote debug port
     depends_on:
       - database
     deploy:
       mode: replicated
       replicas: 1
+      resources:
+        limits:
+          cpus: "0.25"
       restart_policy:
         condition: on-failure
     links:
@@ -42,7 +45,6 @@ services:
       - spring.datasource.url=jdbc:postgresql://postgres:5432/postgres
 
 
-
 # Create volume to store database
 volumes:
-  pgData:
+  pgData2:
