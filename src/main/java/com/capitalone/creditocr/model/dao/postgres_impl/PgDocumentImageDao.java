@@ -61,6 +61,7 @@ public class PgDocumentImageDao implements DocumentImageDao {
         this.dataSource = dataSource;
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public void addNewImage(DocumentImage image) {
 
@@ -87,7 +88,7 @@ public class PgDocumentImageDao implements DocumentImageDao {
     }
 
     @Override
-    public Optional<DocumentImage> getImageFor(ProcessingJob job) {
+    public Optional<DocumentImage> getImageForJob(ProcessingJob job) {
         //language=sql
         String sql = "SELECT images.* FROM document_images as images, jobs, job_assignments " +
                      " WHERE job_assignments.job_id = jobs.id " +
@@ -110,4 +111,52 @@ public class PgDocumentImageDao implements DocumentImageDao {
 
         return Optional.of(resp.get(0));
     }
+
+
+    @SuppressWarnings("Duplicates")
+    @Override
+    public Optional<DocumentImage> getImageForDocument(int documentId, int page) {
+        //language=sql
+        String sql = " select * " +
+                     " from document_images " +
+                     " where document_id = :docId " +
+                     " and page_number = :page;";
+
+        var source = new MapSqlParameterSource()
+                .addValue( "docId", documentId )
+                .addValue( "page", page );
+        var template = new NamedParameterJdbcTemplate( dataSource );
+
+        List<DocumentImage> images = template.query( sql, source, ROW_MAPPER );
+
+        if (images.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of( images.get( 0 ) );
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Override
+    public Optional<DocumentImage> getEnvelopeForDocument(int id) {
+        //language=sql
+        String sql = " select * " +
+                     " from document_images " +
+                     " where document_id = :docId " +
+                     " and is_envelope = true; ";
+
+        var source = new MapSqlParameterSource()
+                .addValue( "docId", id );
+        var template = new NamedParameterJdbcTemplate( dataSource );
+
+        List<DocumentImage> images = template.query( sql, source, ROW_MAPPER );
+
+        if (images.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of( images.get( 0 ) );
+        }
+
+    }
+
 }

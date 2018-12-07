@@ -33,12 +33,14 @@ public final class Document {
 
     private int addressId;
 
+    private String queue;
+
     @Nullable
     private byte[] fingerprint;
 
     Document(long accountNumber, @Nullable String ssn, @Nullable Instant letterDate,
              @Nullable Instant dateOfBirth, @Nullable Instant postmarkDate, int numSimilarDocuments,
-             int addressId, @Nullable byte[] fingerprint) {
+             int addressId, @Nullable byte[] fingerprint, String queue) {
         this.accountNumber = accountNumber;
         this.ssn = ssn;
         this.letterDate = letterDate;
@@ -47,6 +49,7 @@ public final class Document {
         this.numSimilarDocuments = numSimilarDocuments;
         this.addressId = addressId;
         this.fingerprint = fingerprint;
+        this.queue = queue;
     }
 
     public static DocumentBuilder builder() {
@@ -120,15 +123,25 @@ public final class Document {
         this.postmarkDate = postmarkDate;
     }
 
+    public String getQueue() {
+        return queue;
+    }
+
+    public void setQueue(String queue) {
+        this.queue = queue;
+    }
+
     @Nullable
     public byte[] getFingerprint() {
         return fingerprint;
     }
 
     public void setFingerprint(@Nullable byte[] fingerprint) {
-
         this.fingerprint = fingerprint;
+    }
 
+    public void setDateOfBirth(@Nullable Instant dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
     }
 
     @Override
@@ -144,12 +157,14 @@ public final class Document {
                 Objects.equals(getLetterDate(), document.getLetterDate()) &&
                 Objects.equals(getDateOfBirth(), document.getDateOfBirth()) &&
                 Objects.equals(getPostmarkDate(), document.getPostmarkDate()) &&
+                Objects.equals(getQueue(), document.getQueue()) &&
                 Arrays.equals(getFingerprint(), document.getFingerprint());
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(getId(), getAccountNumber(), getSsn(), getLetterDate(), getDateOfBirth(), getPostmarkDate(), getNumSimilarDocuments(), getAddressId());
+        int result = Objects.hash(getId(), getAccountNumber(), getSsn(), getLetterDate(), getDateOfBirth(),
+                getPostmarkDate(), getNumSimilarDocuments(), getAddressId(), getQueue());
         result = 31 * result + Arrays.hashCode(getFingerprint());
         return result;
     }
@@ -165,6 +180,7 @@ public final class Document {
                 ", postmarkDate=" + postmarkDate +
                 ", numSimilarDocuments=" + numSimilarDocuments +
                 ", addressId=" + addressId +
+                ", queue=" + queue +
                 ", fingerprint=" + Arrays.toString(fingerprint) +
                 '}';
     }

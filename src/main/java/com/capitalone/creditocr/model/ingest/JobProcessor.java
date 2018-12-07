@@ -10,10 +10,10 @@ import com.capitalone.creditocr.model.dto.document.DocumentText;
 import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
 import com.capitalone.creditocr.util.Simhash;
-import com.capitalone.creditocr.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
@@ -32,11 +32,17 @@ public class JobProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(JobProcessor.class);
 
-    // TODO: Make this configurable.
-    private static final int JOB_QUEUE_SIZE = 4;
     private static final long MS_PER_SECOND = 1000L;
-    private static final int MAX_TIMEOUT = 5;
-    private static final float SIMILARITY_THRESHOLD = .6f;
+
+    @Value( "${processor.maxSleep}" )
+    private int maxTimeout;
+
+    @Value( "${processor.similarityThreshold}" )
+    private float similarityThreshold;
+
+    @Value( "${processor.maxWorkerThreads}" )
+    private int jobQueueSize;
+
 
     private final ByteIngester ingester;
     private final JobDao jobDao;
@@ -74,9 +80,9 @@ public class JobProcessor {
             int noOpIterations = 0;
             while (!stopFlag) {
 
-                // This method may allow slightly more than JOB_QUEUE_SIZE threads to be created, but it should be
+                // This method may allow slightly more than jobQueueSize threads to be created, but it should be
                 // small enough that it does not matter.
-                var tooManyThreads = activeThreadCount.get() >= JOB_QUEUE_SIZE;
+                var tooManyThreads = activeThreadCount.get() >= jobQueueSize;
 
                 // TODO: If this grows too big (more than some config value) trigger a warning.
                 if (tooManyThreads) {
@@ -88,7 +94,7 @@ public class JobProcessor {
                 Optional<ProcessingJob> job = jobDao.acceptNextJob(InstanceConfig.INSTANCE_ID);
                 logger.debug("Accepted job " + job.toString());
 
-                if (!job.isPresent()) {
+                if (job.isEmpty()) {
                     // This should reduce load on both the server and the database when few/no jobs are available
                     noOpIterations++;
                     sleep(noOpIterations);
@@ -153,7 +159,7 @@ public class JobProcessor {
         // Generate fingerprint and count similar documents
         byte[] fingerprint = Simhash.hash(fullText);
         document.setFingerprint(fingerprint);
-        int numSimilarDocuments = documentDao.getSimilarDocumentIds(fingerprint, SIMILARITY_THRESHOLD).size();
+        int numSimilarDocuments = documentDao.getSimilarDocumentIds(fingerprint, similarityThreshold ).size();
         document.setNumSimilarDocuments(numSimilarDocuments);
 
         // Extract customer information from letters
@@ -170,12 +176,20 @@ public class JobProcessor {
             // At the moment, the database isn't set up to handle partial numbers...
             logger.debug("Got partial account number.", e);
         }
-        document.setLetterDate(TimeUtils.string2Instant(letterData.getLetterDate()));
+        document.setLetterDate(letterData.getLetterDate());
+
+        var queueSorter = new LetterQueueProcessor();
+        var normalizedText = queueSorter.normalizeLetterText(letterData);
+        queueSorter.processText(normalizedText);
+        String queue = queueSorter.getFinalQueue();
+
+        logger.info(String.format("Document %s assigned to queue %s. Keyword = %s", document.getId(), queue, queueSorter.getMatchingDescriptions()));
+
+        document.setQueue(queue);
 
         // Save document to database
         documentDao.updateDocument(document);
 
-        // TODO: sort into queue
     }
 
     /**
@@ -194,8 +208,8 @@ public class JobProcessor {
      */
     @NonNull
     private DocumentImage getImageFor(ProcessingJob job) {
-        Optional<DocumentImage> image = imageDao.getImageFor(job);
-        if (!image.isPresent()) {
+        Optional<DocumentImage> image = imageDao.getImageForJob(job);
+        if (image.isEmpty()) {
             // This should not happen
             logger.error("Could not find matching image for job " + job);
             throw new IllegalStateException("Could not load image from the database for job " + job);
@@ -204,7 +218,7 @@ public class JobProcessor {
     }
 
     private void sleep(int iteration) {
-        long ms = Math.min(MAX_TIMEOUT, iteration) * MS_PER_SECOND;
+        long ms = Math.min( maxTimeout, iteration) * MS_PER_SECOND;
         try {
             logger.debug("Job processor pausing for " + ms + " ms");
             Thread.sleep(ms);

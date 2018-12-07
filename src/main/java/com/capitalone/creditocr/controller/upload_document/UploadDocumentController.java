@@ -10,8 +10,9 @@ import com.capitalone.creditocr.model.dto.ImageType;
 import com.capitalone.creditocr.model.dto.document.Document;
 import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
+import com.capitalone.creditocr.util.PdfUtil;
 import com.capitalone.creditocr.util.UnzipUtil;
-import com.capitalone.creditocr.view.DocumentResponse;
+import com.capitalone.creditocr.view.JobListResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,11 +65,11 @@ public class UploadDocumentController {
      * @param file The file from the request
      * @throws UnsupportedFileTypeException if the client attempts to upload a document with an invalid file type
      * @throws InternalServerErrorException if an unrecoverable error occurs.
-//     */
+     */
     @PostMapping("/documents")
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Transactional(rollbackFor = Exception.class)
-    public List<DocumentResponse> processRequest(@RequestParam("file") MultipartFile file) {
+    public List<JobListResponse> processRequest(@RequestParam("file") MultipartFile file) {
 
         String contentType = file.getContentType();
 
@@ -94,15 +95,21 @@ public class UploadDocumentController {
             // referencing by other tables.
             Document document = makeDocumentEntry();
 
-            int jobId = storeImage(fileContent, ImageType.fromContentType(contentType), 0, document);
-            DocumentResponse response = new DocumentResponse(document.getId(), Collections.singletonList(jobId));
+            List<Integer> jobIds;
+            try {
+                jobIds = storeImage(fileContent, ImageType.fromContentType(contentType), 0, document);
+            } catch (IOException e) {
+                logger.error("Could not store image", e);
+                throw new InternalServerErrorException("Could not store image", e);
+            }
+            JobListResponse response = new JobListResponse(document.getId(), jobIds);
             return Collections.singletonList(response);
         }
     }
 
 
-    private List<DocumentResponse> processZippedInput(byte[] fileContent) {
-        List<DocumentResponse> responses = new ArrayList<>();
+    private List<JobListResponse> processZippedInput(byte[] fileContent) {
+        List<JobListResponse> responses = new ArrayList<>();
         Path workDir = null;
         try {
             // Extract the zipped contents and write them to a temp directory
@@ -113,22 +120,25 @@ public class UploadDocumentController {
             // different documents, while items grouped inside a folder are considered to be different parts of the same document.
             // This makes a simple recursive solution tricky, as it requires separate logic to detect if this is a top-level file,
             // as opposed to a grouped file. The groupingBy collector makes this easy.
-            Files.walk(unzipped, 2)
+            var entries = Files.walk(unzipped, 2)
                     .filter(path -> path.compareTo(unzipped) > 0)
-                    .collect(Collectors.groupingBy(Path::getParent))
-                    .forEach((parent, group) -> {
-                        if (parent.equals(unzipped)) {
-                            // Top-level files. Treat as unique.
-                            responses.addAll(storeIndividualFiles(group));
-                        } else {
-                            // Grouped in directory. Treat as group of documents
-                            try {
-                                responses.add(storeGroupedFiles(group));
-                            } catch (IOException e) {
-                                throw new InternalServerErrorException("Could not read file", e);
-                            }
-                        }
-                    });
+                    .collect(Collectors.groupingBy(Path::getParent)).entrySet();
+
+            for (var entry : entries) {
+                Path parent = entry.getKey();
+                List<Path> group = entry.getValue();
+                if (parent.equals(unzipped)) {
+                    // Top-level files. Treat as unique.
+                    responses.addAll(storeIndividualFiles(group));
+                } else {
+                    // Grouped in directory. Treat as group of documents
+                    try {
+                        responses.add(storeGroupedFiles(group));
+                    } catch (IOException e) {
+                        throw new InternalServerErrorException("Could not read file", e);
+                    }
+                }
+            }
 
         } catch (IOException e) {
             logger.error("Error occurred while writing files to disk.", e);
@@ -150,8 +160,8 @@ public class UploadDocumentController {
      * Handle the files in the root of the uploaded .zip directory.
      */
     @Transactional
-    List<DocumentResponse> storeIndividualFiles(List<Path> files) {
-        List<DocumentResponse> list = new ArrayList<>();
+    List<JobListResponse> storeIndividualFiles(List<Path> files) throws IOException {
+        List<JobListResponse> list = new ArrayList<>();
         for (Path path : files) {
             if (path.toFile().isDirectory()) {
                 // Don't try to ingest a directory. This will be handled by a later iteration
@@ -167,11 +177,11 @@ public class UploadDocumentController {
                 // a checked exception from here
                 throw new InternalServerErrorException("Could not read file from disk", e);
             }
-            int jobId = storeImage(content, ImageType.PNG, 0, document);
-            DocumentResponse resp = new DocumentResponse(document.getId(), Collections.singletonList(jobId));
+            List<Integer> jobIds = storeImage(content, ImageType.PNG, 0, document);
+            JobListResponse resp = new JobListResponse(document.getId(), jobIds);
 
             ProcessingJob documentJob = ProcessingJob.documentJob(Instant.now(), document.getId());
-            jobDao.createDocumentProcessingJob(documentJob, Collections.singletonList(jobId));
+            jobDao.createDocumentProcessingJob(documentJob, jobIds);
 
             list.add(resp);
         }
@@ -185,9 +195,9 @@ public class UploadDocumentController {
         return document;
     }
 
-    private DocumentResponse storeGroupedFiles(List<Path> files) throws IOException {
+    private JobListResponse storeGroupedFiles(List<Path> files) throws IOException {
         Document document = makeDocumentEntry();
-
+        int pageOffset = 0;
         List<Integer> jobIds = new ArrayList<>();
         for (Path file : files) {
             if (file.toFile().isDirectory()) { continue; }
@@ -201,8 +211,9 @@ public class UploadDocumentController {
             } else {
                 if (filename.matches("[0-9]+")) {
                     pageNum = Integer.valueOf(filename);
-                    int jobId = storeImage(bytes, ImageType.fromPath(file), pageNum, document);
-                    jobIds.add(jobId);
+                    List<Integer> pageJobs = storeImage(bytes, ImageType.fromPath(file), pageNum, document);
+                    pageOffset += pageJobs.size()-1;
+                    jobIds.addAll(pageJobs);
                 } else {
                     // TODO: Find better solution than skipping the page. Maybe try to infer a page number somehow??
                     logger.error("Could not get page number for file " + file.getFileName());
@@ -213,7 +224,7 @@ public class UploadDocumentController {
         ProcessingJob job = ProcessingJob.documentJob(Instant.now(), document.getId());
         jobDao.createDocumentProcessingJob(job, jobIds);
 
-        return new DocumentResponse(document.getId(), jobIds);
+        return new JobListResponse(document.getId(), jobIds);
     }
 
     /**
@@ -222,9 +233,14 @@ public class UploadDocumentController {
      * @param contentType the image's type
      * @param pageNum the page number for the image
      * @param document the document to associate the image with
-     * @return the job id for the processing request.
+     * @return the job ids generated for the processing request.
      */
-    private int storeImage(byte[] fileContent, @NonNull ImageType contentType, int pageNum, Document document) {
+    private List<Integer> storeImage(byte[] fileContent, @NonNull ImageType contentType, int pageNum, Document document) throws IOException {
+
+        if (PdfUtil.isPdf(fileContent)) {
+            return storePdf(fileContent, pageNum, document);
+        }
+
         // Save image to DB
         DocumentImage documentImage = DocumentImage.builder()
                 .setIsEnvelope(pageNum < 0)
@@ -240,7 +256,33 @@ public class UploadDocumentController {
         ProcessingJob intent = ProcessingJob.imageJob(Instant.now(), documentImage.getId());
         jobDao.createImageProcessingJob(intent);
 
-        return intent.getId();
+        return Collections.singletonList(intent.getId());
+    }
+
+    private List<Integer> storePdf(byte[] fileContent, int pageNum, Document document) throws IOException {
+        // TODO: This should probably generate a new job instead of doing it now.
+        List<byte[]> pngs = PdfUtil.pdf2png(fileContent);
+        List<Integer> ret = new ArrayList<>();
+
+        for (int i = 0; i < pngs.size(); i++) {
+            byte[] png = pngs.get(i);
+
+            DocumentImage image = DocumentImage.builder()
+                    .setPageNumber(pageNum+i)
+                    .setIsEnvelope(false) // Need some way to detect this...
+                    .setImageType(ImageType.PNG)
+                    .setFileData(png)
+                    .setDocumentId(document.getId())
+                    .build();
+
+            imageDao.addNewImage(image);
+            var intent = ProcessingJob.imageJob(Instant.now(), image.getId());
+            jobDao.createImageProcessingJob(intent);
+
+            ret.add(intent.getId());
+        }
+
+        return ret;
     }
 
     /**

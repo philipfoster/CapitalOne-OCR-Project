@@ -2,6 +2,7 @@ package com.capitalone.creditocr.util;
 
 import org.springframework.util.DigestUtils;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,6 +78,34 @@ public class Simhash {
         }
 
         return ngrams.toArray(new String[] {});
+    }
+
+    /**
+     * Extract the hash into longs. Return length will always be 2
+     */
+    public static long[] splitHash(byte[] hash) {
+        if (hash == null || hash.length != 16) {
+            return new long[]{0L, 0L};
+        }
+
+        ByteBuffer buffer = ByteBuffer.wrap( hash );
+        long[] ret = new long[2];
+        ret[0] = buffer.getLong();
+        ret[1] = buffer.getLong();
+
+
+        return ret;
+    }
+
+
+    public static byte[] unsplitHash(long[] split) {
+        ByteBuffer buffer = ByteBuffer.allocate( 16 );
+        buffer.putLong( split[0] );
+        buffer.putLong( split[1] );
+
+        byte[] retBuf = new byte[16];
+        System.arraycopy( buffer.array(), 0, retBuf, 0, retBuf.length );
+        return retBuf;
     }
 
 }

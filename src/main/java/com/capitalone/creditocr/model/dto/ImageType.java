@@ -1,5 +1,7 @@
 package com.capitalone.creditocr.model.dto;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.Nullable;
 
 import java.nio.file.Path;
@@ -13,6 +15,7 @@ public enum ImageType {
     PNG,
     TIFF;
 
+    private static final Logger logger = LoggerFactory.getLogger( ImageType.class );
     ImageType() {
     }
 
@@ -40,6 +43,17 @@ public enum ImageType {
             default:
                 return null;
         }
+    }
+
+    public String toContentType() {
+        switch (this) {
+            case JPEG: return "image/jpeg";
+            case PDF: return "application/pdf";
+            case PNG: return "image/png";
+            case TIFF: return "image/tiff";
+        }
+
+        throw new IllegalArgumentException( "CANNOT GET CONTENT TYPE. DID YOU ADD A NEW IMAGE FORMAT WITHOUT ADDING THE CONTENT TYPE?" );
     }
 
     /**

@@ -11,6 +11,7 @@ public class DocumentBuilder {
     private int numSimilarDocuments;
     private int addressId;
     private byte[] fingerprint;
+    private String queue;
 
     public DocumentBuilder setAccountNumber(long accountNumber) {
         this.accountNumber = accountNumber;
@@ -52,7 +53,12 @@ public class DocumentBuilder {
         return this;
     }
 
+    public DocumentBuilder setQueue(String queue) {
+        this.queue = queue;
+        return this;
+    }
+
     public Document build() {
-        return new Document(accountNumber, ssn, letterDate, dateOfBirth, postmarkDate, numSimilarDocuments, addressId, fingerprint);
+        return new Document(accountNumber, ssn, letterDate, dateOfBirth, postmarkDate, numSimilarDocuments, addressId, fingerprint, queue);
     }
 }

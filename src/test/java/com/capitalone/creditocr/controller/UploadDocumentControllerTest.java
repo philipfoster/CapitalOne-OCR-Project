@@ -7,7 +7,7 @@ import com.capitalone.creditocr.model.dao.JobDao;
 import com.capitalone.creditocr.model.dto.document.Document;
 import com.capitalone.creditocr.model.dto.document_image.DocumentImage;
 import com.capitalone.creditocr.model.dto.job.ProcessingJob;
-import com.capitalone.creditocr.view.DocumentResponse;
+import com.capitalone.creditocr.view.JobListResponse;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.junit.Test;
@@ -174,18 +174,18 @@ public class UploadDocumentControllerTest {
 
         // Deserialize json into a list of objects
         String json = result.getResponse().getContentAsString();
-        List<DocumentResponse> responses = new Gson().fromJson(json, new TypeToken<List<DocumentResponse>>() {}.getType());
+        List<JobListResponse> responses = new Gson().fromJson(json, new TypeToken<List<JobListResponse>>() {}.getType());
 
         // Make sure there are 3 single-page documents
         long numSinglePages = responses.stream().filter(obj -> obj.getJobIds().size() == 1).count();
         assertEquals(3, numSinglePages);
 
         // Make sure there is 1 2-page document
-        List<DocumentResponse> twoPageDocs= responses.stream().filter(obj -> obj.getJobIds().size() == 2).collect(Collectors.toList());
+        List<JobListResponse> twoPageDocs= responses.stream().filter(obj -> obj.getJobIds().size() == 2).collect(Collectors.toList());
         assertEquals(1, twoPageDocs.size());
 
         // Make sure there is 1 6-page document
-        List<DocumentResponse> sixPageDocs = responses.stream().filter(obj -> obj.getJobIds().size() == 6).collect(Collectors.toList());
+        List<JobListResponse> sixPageDocs = responses.stream().filter(obj -> obj.getJobIds().size() == 6).collect(Collectors.toList());
         assertEquals(1, sixPageDocs.size());
 
     }
