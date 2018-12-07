@@ -101,7 +101,7 @@ create table jobs
     id             serial                  not null
         constraint jobs_pkey
             primary key,
-    document_image serial
+    document_image integer
         constraint jobs_document_images_id_fk
             references document_images,
     type           job_type,
